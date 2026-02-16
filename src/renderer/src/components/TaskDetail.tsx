@@ -46,6 +46,7 @@ import {
   Plus,
   X,
   CheckCircle2,
+  ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -153,6 +154,7 @@ function SubTaskList({ task }: { task: Task }) {
               {subTask.title}
             </span>
             <button
+              aria-label={`删除子任务: ${subTask.title}`}
               onClick={() => handleDeleteSubTask(subTask.id)}
               className="opacity-0 group-hover:opacity-100 transition-opacity"
             >
@@ -698,9 +700,10 @@ export function TaskDetail() {
   if (!task) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg font-medium text-muted-foreground/60">🍉</p>
-          <p className="mt-2 text-sm text-muted-foreground/60">选择一个任务查看详情</p>
+        <div className="flex flex-col items-center text-center">
+          <ClipboardList className="size-12 text-muted-foreground/20 mb-3" />
+          <p className="text-sm font-medium text-muted-foreground/50">选择一个任务查看详情</p>
+          <p className="mt-1 text-xs text-muted-foreground/40">或按 Cmd+N 创建新任务</p>
         </div>
       </div>
     )
@@ -710,14 +713,14 @@ export function TaskDetail() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-5">
         {/* Header: Title + Delete */}
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-2">
             <Input
               value={title}
               onChange={handleTitleChange}
-              className="text-lg font-semibold border-none shadow-none focus-visible:ring-0 px-0 h-auto"
+              className="text-lg font-semibold border-none shadow-none focus-visible:ring-0 px-0 h-auto hover:bg-accent/30 rounded-md transition-colors -ml-1 pl-1"
               placeholder="任务标题"
             />
             <AlertDialog>
@@ -726,6 +729,7 @@ export function TaskDetail() {
                   variant="ghost"
                   size="icon"
                   className="size-8 text-muted-foreground hover:text-destructive shrink-0"
+                  aria-label="删除任务"
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -767,10 +771,10 @@ export function TaskDetail() {
         <Separator />
 
         {/* Properties Grid */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           {/* Priority */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 w-20 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
               <Flag className={cn('size-4', getPriorityColor(task.priority))} />
               <span className="text-xs text-muted-foreground">优先级</span>
             </div>
@@ -788,8 +792,8 @@ export function TaskDetail() {
           </div>
 
           {/* Category */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 w-20 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
               <FolderOpen className="size-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">分类</span>
             </div>
@@ -818,8 +822,8 @@ export function TaskDetail() {
           </div>
 
           {/* Due Date */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 w-20 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
               <CalendarDays className="size-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">截止</span>
             </div>
@@ -862,8 +866,8 @@ export function TaskDetail() {
           </div>
 
           {/* Tags */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 w-20 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
               <Tag className="size-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">标签</span>
             </div>
@@ -873,8 +877,8 @@ export function TaskDetail() {
           </div>
 
           {/* Recurrence */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 w-20 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
               <Repeat className="size-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">重复</span>
             </div>
@@ -887,8 +891,8 @@ export function TaskDetail() {
           </div>
 
           {/* Reminder */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 w-20 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
               <Bell className="size-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">提醒</span>
             </div>
@@ -912,17 +916,17 @@ export function TaskDetail() {
             value={description}
             onChange={handleDescriptionChange}
             placeholder="添加备注..."
-            className="min-h-[100px] resize-none border-muted text-sm"
+            className="min-h-[100px] resize-none border-muted/60 text-sm focus:border-primary/30 transition-colors"
           />
         </div>
 
-        <Separator />
+        <Separator className="opacity-60" />
 
         {/* Sub-tasks */}
         <SubTaskList task={task} />
 
         {/* Footer metadata */}
-        <div className="pt-4 text-[11px] text-muted-foreground/60 space-y-0.5">
+        <div className="pt-6 pb-2 text-[11px] text-muted-foreground/50 space-y-0.5">
           <p>创建于 {format(parseISO(task.createdAt), 'yyyy年M月d日 HH:mm', { locale: zhCN })}</p>
           <p>更新于 {format(parseISO(task.updatedAt), 'yyyy年M月d日 HH:mm', { locale: zhCN })}</p>
         </div>
