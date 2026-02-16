@@ -32,6 +32,7 @@ interface AppState {
   filterCategoryId: string | null
   filterTagIds: string[]
   searchQuery: string
+  compactMode: boolean
   loading: boolean
   error: AppError | null
 }
@@ -55,6 +56,7 @@ type AppAction =
   | { type: 'SET_SEARCH_QUERY'; payload: string }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: AppError | null }
+  | { type: 'TOGGLE_COMPACT_MODE' }
 
 // ============================================================
 // Reducer
@@ -69,6 +71,7 @@ const initialState: AppState = {
   filterCategoryId: null,
   filterTagIds: [],
   searchQuery: '',
+  compactMode: localStorage.getItem('watermelon:compactMode') === 'true',
   loading: true,
   error: null,
 }
@@ -131,6 +134,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, loading: action.payload }
     case 'SET_ERROR':
       return { ...state, error: action.payload }
+    case 'TOGGLE_COMPACT_MODE': {
+      const next = !state.compactMode
+      localStorage.setItem('watermelon:compactMode', String(next))
+      return { ...state, compactMode: next }
+    }
     default:
       return state
   }

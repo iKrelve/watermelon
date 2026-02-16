@@ -42,7 +42,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useApp } from '@/context/AppContext'
-import { getPriorityColor } from '@/utils/priority'
+import { getPriorityColor, getPriorityBadgeClasses } from '@/utils/priority'
 import { format, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import type { Task, Priority, RecurrenceRule, RecurrenceType } from '../../../shared/types'
@@ -818,18 +818,22 @@ export function TaskDetail() {
                 <TooltipTrigger asChild>
                   <PopoverTrigger asChild>
                     <Button
-                      variant="outline"
+                      variant={task.priority !== 'none' ? 'secondary' : 'outline'}
                       size="sm"
                       className={cn(
-                        'h-7 gap-1.5 text-xs font-normal',
-                        task.priority !== 'none' && 'border-current'
+                        'h-7 gap-1.5 text-xs font-medium',
+                        task.priority !== 'none'
+                          ? getPriorityBadgeClasses(task.priority)
+                          : 'font-normal'
                       )}
                     >
-                      <Flag className={cn('size-3.5', getPriorityColor(task.priority))} />
-                      {task.priority !== 'none' && (
+                      <Flag className={cn('size-3.5', task.priority === 'none' ? 'text-muted-foreground' : 'currentColor')} />
+                      {task.priority !== 'none' ? (
                         <span>
                           {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
                         </span>
+                      ) : (
+                        <span className="text-muted-foreground">优先级</span>
                       )}
                     </Button>
                   </PopoverTrigger>
@@ -847,7 +851,19 @@ export function TaskDetail() {
                     )}
                   >
                     <Flag className={cn('size-3.5', getPriorityColor(p))} />
-                    {p === 'none' ? '无' : p === 'low' ? '低' : p === 'medium' ? '中' : '高'}
+                    <span className="flex-1">
+                      {p === 'none' ? '无' : p === 'low' ? '低' : p === 'medium' ? '中' : '高'}
+                    </span>
+                    {p !== 'none' && (
+                      <span
+                        className={cn(
+                          'size-2 rounded-full',
+                          p === 'high' && 'bg-red-500',
+                          p === 'medium' && 'bg-amber-500',
+                          p === 'low' && 'bg-blue-500'
+                        )}
+                      />
+                    )}
                   </button>
                 ))}
               </PopoverContent>
