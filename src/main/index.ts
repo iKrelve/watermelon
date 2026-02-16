@@ -39,7 +39,7 @@ function initServices(): void {
 }
 
 function createWindow(): void {
-  const iconPath = join(__dirname, '../../build/icon_1024.png')
+  const iconPath = join(app.getAppPath(), 'build/icon_1024.png')
   const appIcon = nativeImage.createFromPath(iconPath)
 
   // Set macOS dock icon
