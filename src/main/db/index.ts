@@ -26,6 +26,9 @@ export function initDatabase(dbPath: string): BetterSQLite3Database<typeof schem
   // Create tables using raw SQL (drizzle push equivalent)
   createTables(sqliteDb)
 
+  // Run incremental migrations for existing databases
+  runMigrations(sqliteDb)
+
   return db
 }
 
@@ -38,6 +41,7 @@ export function initTestDatabase(): BetterSQLite3Database<typeof schema> {
 
   const testDb = drizzle(testSqliteDb, { schema })
   createTables(testSqliteDb)
+  runMigrations(testSqliteDb)
 
   return testDb
 }
@@ -100,6 +104,9 @@ function createTables(sqliteDb: Database.Database): void {
       id TEXT PRIMARY KEY,
       task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
+      description TEXT,
+      priority TEXT NOT NULL DEFAULT 'none',
+      due_date TEXT,
       completed INTEGER NOT NULL DEFAULT 0,
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL
@@ -126,6 +133,27 @@ function createTables(sqliteDb: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_task_tags_task_id ON task_tags(task_id);
     CREATE INDEX IF NOT EXISTS idx_task_tags_tag_id ON task_tags(tag_id);
   `)
+}
+
+/**
+ * Run incremental migrations for existing databases.
+ * Uses ALTER TABLE to add new columns if they don't exist.
+ */
+function runMigrations(sqliteDb: Database.Database): void {
+  // Check existing columns in sub_tasks
+  const columns = (sqliteDb.pragma('table_info(sub_tasks)') as { name: string }[]).map(
+    (col) => col.name
+  )
+
+  if (!columns.includes('description')) {
+    sqliteDb.exec('ALTER TABLE sub_tasks ADD COLUMN description TEXT')
+  }
+  if (!columns.includes('priority')) {
+    sqliteDb.exec("ALTER TABLE sub_tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'none'")
+  }
+  if (!columns.includes('due_date')) {
+    sqliteDb.exec('ALTER TABLE sub_tasks ADD COLUMN due_date TEXT')
+  }
 }
 
 export { schema }

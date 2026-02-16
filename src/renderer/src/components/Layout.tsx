@@ -48,8 +48,8 @@ export function Layout(): React.JSX.Element {
     return (
       <div className="flex h-screen flex-col bg-background">
         {/* macOS drag region */}
-        <div className="drag-region h-[38px] shrink-0">
-          <div className="no-drag flex h-full items-center justify-end px-3">
+        <div className="drag-region flex h-[38px] shrink-0 items-center justify-end px-3">
+          <div className="no-drag">
             <TooltipProvider delayDuration={300}>
               <Tooltip>
                 <TooltipTrigger asChild>

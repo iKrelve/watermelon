@@ -42,6 +42,9 @@ export interface SubTask {
   id: string
   taskId: string
   title: string
+  description: string | null
+  priority: Priority
+  dueDate: string | null // ISO date string (YYYY-MM-DD)
   completed: boolean
   sortOrder: number
   createdAt: string
@@ -86,11 +89,17 @@ export interface UpdateTaskInput {
 
 export interface CreateSubTaskInput {
   title: string
+  description?: string
+  priority?: Priority
+  dueDate?: string
   sortOrder?: number
 }
 
 export interface UpdateSubTaskInput {
   title?: string
+  description?: string | null
+  priority?: Priority
+  dueDate?: string | null
   completed?: boolean
   sortOrder?: number
 }
