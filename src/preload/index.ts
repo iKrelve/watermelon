@@ -61,6 +61,10 @@ const api = {
   getStats: (period: 'day' | 'week' | 'month') =>
     ipcRenderer.invoke(IPC_CHANNELS.STATS_GET, period),
   getDailyTrend: (days: number) => ipcRenderer.invoke(IPC_CHANNELS.STATS_DAILY_TREND, days),
+
+  // Window
+  setCompactMode: (compact: boolean) =>
+    ipcRenderer.invoke(IPC_CHANNELS.WINDOW_SET_COMPACT_MODE, compact),
 }
 
 if (process.contextIsolated) {

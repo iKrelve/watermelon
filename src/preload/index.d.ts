@@ -55,6 +55,9 @@ interface XiaoXiguaApi {
   // Statistics
   getStats(period: 'day' | 'week' | 'month'): Promise<ApiResult<StatsSummary>>
   getDailyTrend(days: number): Promise<ApiResult<DailyTrend[]>>
+
+  // Window
+  setCompactMode(compact: boolean): Promise<void>
 }
 
 declare global {
