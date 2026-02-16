@@ -17,49 +17,50 @@
     </linearGradient>
     <!-- 阴影 -->
     <filter id="shadow" x="-10%" y="-5%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#00000015"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#00000018"/>
     </filter>
   </defs>
 
-  <!-- 圆角方形背景 -->
-  <rect width="1024" height="1024" rx="228" fill="url(#bg)"/>
+  <!-- macOS icon 规范：1024x1024 画布，内容区域 824x824，四周各留 100px 透明边距 -->
+  <!-- 圆角方形背景 - 居中 824x824，圆角比例 ~22% ≈ 180 -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
 
-  <!-- 主体组 -->
+  <!-- 主体组 - 居中在 824x824 区域内 -->
   <g transform="translate(512, 500)" filter="url(#shadow)">
     <!-- 绿色外皮半圆 -->
-    <path d="M-310,40 A310,310 0 0,1 310,40 L310,40 L-310,40 Z" fill="url(#rind)"/>
+    <path d="M-248,32 A248,248 0 0,1 248,32 L248,32 L-248,32 Z" fill="url(#rind)"/>
 
     <!-- 深绿色条纹 -->
     <g opacity="0.3">
-      <path d="M-240,40 Q-200,-180 -140,40" fill="none" stroke="#15803d" stroke-width="28" stroke-linecap="round"/>
-      <path d="M-60,40 Q-20,-240 40,40" fill="none" stroke="#15803d" stroke-width="28" stroke-linecap="round"/>
-      <path d="M120,40 Q160,-200 220,40" fill="none" stroke="#15803d" stroke-width="28" stroke-linecap="round"/>
+      <path d="M-192,32 Q-160,-144 -112,32" fill="none" stroke="#15803d" stroke-width="22" stroke-linecap="round"/>
+      <path d="M-48,32 Q-16,-192 32,32" fill="none" stroke="#15803d" stroke-width="22" stroke-linecap="round"/>
+      <path d="M96,32 Q128,-160 176,32" fill="none" stroke="#15803d" stroke-width="22" stroke-linecap="round"/>
     </g>
 
     <!-- 浅绿白瓤 -->
-    <path d="M-270,40 A270,270 0 0,1 270,40 L270,40 L-270,40 Z" fill="#dcfce7"/>
+    <path d="M-216,32 A216,216 0 0,1 216,32 L216,32 L-216,32 Z" fill="#dcfce7"/>
 
     <!-- 红色果肉 -->
-    <path d="M-240,40 A240,240 0 0,1 240,40 L240,40 L-240,40 Z" fill="url(#flesh)"/>
+    <path d="M-192,32 A192,192 0 0,1 192,32 L192,32 L-192,32 Z" fill="url(#flesh)"/>
 
     <!-- 眼睛（种子） -->
     <g>
-      <ellipse cx="-80" cy="-55" rx="18" ry="26" fill="#1e293b"/>
-      <ellipse cx="-85" cy="-65" rx="6" ry="8" fill="#ffffff" opacity="0.7"/>
-      <ellipse cx="80" cy="-55" rx="18" ry="26" fill="#1e293b"/>
-      <ellipse cx="75" cy="-65" rx="6" ry="8" fill="#ffffff" opacity="0.7"/>
+      <ellipse cx="-64" cy="-44" rx="14" ry="21" fill="#1e293b"/>
+      <ellipse cx="-68" cy="-52" rx="5" ry="6" fill="#ffffff" opacity="0.7"/>
+      <ellipse cx="64" cy="-44" rx="14" ry="21" fill="#1e293b"/>
+      <ellipse cx="60" cy="-52" rx="5" ry="6" fill="#ffffff" opacity="0.7"/>
     </g>
 
     <!-- 微笑弧线 -->
-    <path d="M-50,-5 Q0,40 50,-5" fill="none" stroke="#1e293b" stroke-width="10" stroke-linecap="round"/>
+    <path d="M-40,-4 Q0,32 40,-4" fill="none" stroke="#1e293b" stroke-width="8" stroke-linecap="round"/>
 
     <!-- 腮红 -->
-    <ellipse cx="-130" cy="-15" rx="30" ry="18" fill="#fca5a5" opacity="0.5"/>
-    <ellipse cx="130" cy="-15" rx="30" ry="18" fill="#fca5a5" opacity="0.5"/>
+    <ellipse cx="-104" cy="-12" rx="24" ry="14" fill="#fca5a5" opacity="0.5"/>
+    <ellipse cx="104" cy="-12" rx="24" ry="14" fill="#fca5a5" opacity="0.5"/>
 
     <!-- 小茎 -->
-    <path d="M0,-290 Q-15,-340 10,-360" fill="none" stroke="#16a34a" stroke-width="12" stroke-linecap="round"/>
+    <path d="M0,-232 Q-12,-272 8,-288" fill="none" stroke="#16a34a" stroke-width="10" stroke-linecap="round"/>
     <!-- 小叶子 -->
-    <ellipse cx="18" cy="-355" rx="22" ry="10" fill="#4ade80" transform="rotate(-30 18 -355)"/>
+    <ellipse cx="14" cy="-284" rx="18" ry="8" fill="#4ade80" transform="rotate(-30 14 -284)"/>
   </g>
 </svg>
