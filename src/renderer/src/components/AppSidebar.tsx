@@ -163,26 +163,31 @@ export function AppSidebar(): React.JSX.Element {
               xmlns="http://www.w3.org/2000/svg"
               className="shrink-0"
             >
-              {/* 西瓜切片 - 绿色外皮 */}
-              <path
-                d="M4 24C4 13.507 12.507 5 23 5L28 5C28 5 28 10 28 12C28 22.493 19.493 28 9 28L4 28C4 28 4 25 4 24Z"
-                fill="#4ade80"
-              />
-              {/* 白色内皮 */}
-              <path
-                d="M6.5 23.5C6.5 14.94 13.44 8 22 8L25.5 8C25.5 8 25.5 11.5 25.5 13C25.5 21.56 18.56 25.5 10 25.5L6.5 25.5C6.5 25.5 6.5 24 6.5 23.5Z"
-                fill="#bbf7d0"
-              />
-              {/* 红色果肉 */}
-              <path
-                d="M9 22C9 15.373 14.373 10.5 21 10.5L23 10.5C23 10.5 23 12.5 23 14C23 20.627 17.627 23 11 23L9 23C9 23 9 22.5 9 22Z"
-                fill="#f87171"
-              />
-              {/* 西瓜籽 */}
-              <ellipse cx="14" cy="17" rx="1" ry="1.4" fill="#1e293b" transform="rotate(-20 14 17)" />
-              <ellipse cx="17.5" cy="15" rx="1" ry="1.4" fill="#1e293b" transform="rotate(-10 17.5 15)" />
-              <ellipse cx="14.5" cy="20.5" rx="0.9" ry="1.2" fill="#1e293b" transform="rotate(-30 14.5 20.5)" />
-              <ellipse cx="18.5" cy="18.5" rx="0.9" ry="1.2" fill="#1e293b" transform="rotate(-15 18.5 18.5)" />
+              {/* 微笑西瓜半圆 - 垂直居中 */}
+              <g transform="translate(16, 18)">
+                {/* 绿色外皮半圆 */}
+                <path d="M-12,2 A12,12 0 0,1 12,2 Z" fill="#22c55e" />
+                {/* 深绿条纹 */}
+                <g opacity="0.3">
+                  <path d="M-8,2 Q-6.5,-5 -4.5,2" fill="none" stroke="#15803d" strokeWidth="1.1" strokeLinecap="round" />
+                  <path d="M-1.5,2 Q0,-8.5 1.5,2" fill="none" stroke="#15803d" strokeWidth="1.1" strokeLinecap="round" />
+                  <path d="M4.5,2 Q6,-5.5 8,2" fill="none" stroke="#15803d" strokeWidth="1.1" strokeLinecap="round" />
+                </g>
+                {/* 浅绿白瓤 */}
+                <path d="M-10,2 A10,10 0 0,1 10,2 Z" fill="#dcfce7" />
+                {/* 红色果肉 */}
+                <path d="M-8.5,2 A8.5,8.5 0 0,1 8.5,2 Z" fill="#ef4444" />
+                {/* 眼睛 */}
+                <ellipse cx="-3" cy="-1.5" rx="0.75" ry="1" fill="#1e293b" />
+                <ellipse cx="-3.2" cy="-1.9" rx="0.22" ry="0.32" fill="#ffffff" opacity="0.7" />
+                <ellipse cx="3" cy="-1.5" rx="0.75" ry="1" fill="#1e293b" />
+                <ellipse cx="2.8" cy="-1.9" rx="0.22" ry="0.32" fill="#ffffff" opacity="0.7" />
+                {/* 微笑 */}
+                <path d="M-1.8,0.3 Q0,2 1.8,0.3" fill="none" stroke="#1e293b" strokeWidth="0.5" strokeLinecap="round" />
+                {/* 腮红 */}
+                <ellipse cx="-5" cy="0" rx="1.1" ry="0.6" fill="#fca5a5" opacity="0.5" />
+                <ellipse cx="5" cy="0" rx="1.1" ry="0.6" fill="#fca5a5" opacity="0.5" />
+              </g>
             </svg>
             <span className="text-sm font-semibold tracking-tight text-foreground/90 group-data-[collapsible=icon]:hidden">
               小西瓜

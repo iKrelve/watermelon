@@ -117,7 +117,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_FILTER_VIEW':
       return { ...state, filterView: action.payload, selectedTaskId: null }
     case 'SET_FILTER_CATEGORY':
-      return { ...state, filterCategoryId: action.payload, filterView: 'category', selectedTaskId: null }
+      return {
+        ...state,
+        filterCategoryId: action.payload,
+        filterView: action.payload !== null ? 'category' : state.filterView,
+        selectedTaskId: null,
+      }
     case 'SET_FILTER_TAGS':
       return { ...state, filterTagIds: action.payload }
     case 'SET_SEARCH_QUERY':

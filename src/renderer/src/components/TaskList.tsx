@@ -203,7 +203,7 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
         }
       }}
       className={cn(
-        'group flex items-start gap-3 px-4 py-3 cursor-pointer',
+        'group flex items-center gap-3 px-4 py-3 cursor-pointer',
         'rounded-lg mx-1.5 my-0.5',
         'transition-all duration-150',
         'hover:bg-accent/60',
@@ -213,7 +213,7 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
       )}
     >
       {/* Checkbox */}
-      <div className="pt-0.5 no-drag" onClick={(e) => e.stopPropagation()}>
+      <div className="no-drag shrink-0" onClick={(e) => e.stopPropagation()}>
         <Checkbox
           checked={isCompleted}
           onCheckedChange={handleComplete}

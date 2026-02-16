@@ -7,6 +7,11 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -18,6 +23,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Calendar } from '@/components/ui/calendar'
 import {
   AlertDialog,
@@ -47,6 +58,8 @@ import {
   X,
   CheckCircle2,
   ClipboardList,
+  ChevronRight,
+  ListChecks,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -212,10 +225,10 @@ function RecurrenceSettings({
 }: {
   recurrenceRule: RecurrenceRule | null
   onChange: (rule: RecurrenceRule | null) => void
-}) {
+}): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
 
-  const handleTypeChange = (type: string) => {
+  const handleTypeChange = (type: string): void => {
     if (type === 'none') {
       onChange(null)
       return
@@ -229,12 +242,12 @@ function RecurrenceSettings({
     onChange(newRule)
   }
 
-  const handleIntervalChange = (interval: number) => {
+  const handleIntervalChange = (interval: number): void => {
     if (!recurrenceRule) return
     onChange({ ...recurrenceRule, interval: Math.max(1, interval) })
   }
 
-  const toggleWeekday = (day: number) => {
+  const toggleWeekday = (day: number): void => {
     if (!recurrenceRule) return
     const current = recurrenceRule.daysOfWeek ?? []
     const updated = current.includes(day)
@@ -246,23 +259,28 @@ function RecurrenceSettings({
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            'h-8 justify-start gap-2 text-sm font-normal',
-            recurrenceRule && 'text-primary'
-          )}
-        >
-          <Repeat className="size-4" />
-          {recurrenceRule
-            ? `${RECURRENCE_TYPE_LABELS[recurrenceRule.type]}${
-                recurrenceRule.interval > 1 ? ` (每${recurrenceRule.interval}次)` : ''
-              }`
-            : '不重复'}
-        </Button>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                'h-7 gap-1.5 text-xs font-normal',
+                recurrenceRule && 'border-primary/40 text-primary'
+              )}
+            >
+              <Repeat className="size-3.5" />
+              {recurrenceRule
+                ? `${RECURRENCE_TYPE_LABELS[recurrenceRule.type]}${
+                    recurrenceRule.interval > 1 ? ` ×${recurrenceRule.interval}` : ''
+                  }`
+                : null}
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent>重复</TooltipContent>
+      </Tooltip>
       <PopoverContent className="w-64 p-3" align="start">
         <div className="space-y-3">
           <Select
@@ -363,11 +381,11 @@ function ReminderSettings({
 }: {
   reminderTime: string | null
   onChange: (time: string | null) => void
-}) {
+}): React.JSX.Element {
   const [isOpen, setIsOpen] = useState(false)
   const currentDate = reminderTime ? parseISO(reminderTime) : null
 
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateSelect = (date: Date | undefined): void => {
     if (!date) {
       onChange(null)
       return
@@ -379,7 +397,7 @@ function ReminderSettings({
     onChange(date.toISOString())
   }
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const [hours, minutes] = e.target.value.split(':').map(Number)
     if (isNaN(hours) || isNaN(minutes)) return
 
@@ -388,7 +406,7 @@ function ReminderSettings({
     onChange(date.toISOString())
   }
 
-  const handleClear = () => {
+  const handleClear = (): void => {
     onChange(null)
     setIsOpen(false)
   }
@@ -399,21 +417,26 @@ function ReminderSettings({
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            'h-8 justify-start gap-2 text-sm font-normal',
-            reminderTime && 'text-primary'
-          )}
-        >
-          <Bell className="size-4" />
-          {reminderTime
-            ? format(parseISO(reminderTime), 'M月d日 HH:mm', { locale: zhCN })
-            : '设置提醒'}
-        </Button>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                'h-7 gap-1.5 text-xs font-normal',
+                reminderTime && 'border-primary/40 text-primary'
+              )}
+            >
+              <Bell className="size-3.5" />
+              {reminderTime
+                ? format(parseISO(reminderTime), 'M月d日 HH:mm', { locale: zhCN })
+                : null}
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent>提醒</TooltipContent>
+      </Tooltip>
       <PopoverContent className="w-auto p-3" align="start">
         <div className="space-y-3">
           <Calendar
@@ -451,7 +474,7 @@ function ReminderSettings({
 // Tag selector
 // ============================================================
 
-function TagSelector({ task }: { task: Task }) {
+function TagSelector({ task }: { task: Task }): React.JSX.Element {
   const { state, addTagToTask, removeTagFromTask, createTag } = useApp()
   const [isOpen, setIsOpen] = useState(false)
   const [newTagName, setNewTagName] = useState('')
@@ -459,7 +482,7 @@ function TagSelector({ task }: { task: Task }) {
   const taskTagIds = (task.tags ?? []).map((t) => t.id)
   const availableTags = state.tags.filter((t) => !taskTagIds.includes(t.id))
 
-  const handleAddTag = async (tagId: string) => {
+  const handleAddTag = async (tagId: string): Promise<void> => {
     try {
       await addTagToTask(task.id, tagId)
     } catch {
@@ -467,7 +490,7 @@ function TagSelector({ task }: { task: Task }) {
     }
   }
 
-  const handleRemoveTag = async (tagId: string) => {
+  const handleRemoveTag = async (tagId: string): Promise<void> => {
     try {
       await removeTagFromTask(task.id, tagId)
     } catch {
@@ -475,7 +498,7 @@ function TagSelector({ task }: { task: Task }) {
     }
   }
 
-  const handleCreateAndAdd = async () => {
+  const handleCreateAndAdd = async (): Promise<void> => {
     const trimmed = newTagName.trim()
     if (!trimmed) return
     try {
@@ -487,20 +510,28 @@ function TagSelector({ task }: { task: Task }) {
     }
   }
 
+  const tagCount = task.tags?.length ?? 0
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 justify-start gap-2 text-sm font-normal"
-        >
-          <Tag className="size-4" />
-          {task.tags && task.tags.length > 0
-            ? `${task.tags.length} 个标签`
-            : '添加标签'}
-        </Button>
-      </PopoverTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                'h-7 gap-1.5 text-xs font-normal',
+                tagCount > 0 && 'border-primary/40 text-primary'
+              )}
+            >
+              <Tag className="size-3.5" />
+              {tagCount > 0 ? `${tagCount}` : null}
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent>标签</TooltipContent>
+      </Tooltip>
       <PopoverContent className="w-56 p-2" align="start">
         <div className="space-y-2">
           {/* Current tags */}
@@ -710,138 +741,140 @@ export function TaskDetail() {
   }
 
   const dueDate = task.dueDate ? parseISO(task.dueDate) : undefined
+  const subTasks = task.subTasks ?? []
+  const hasSubTasks = subTasks.length > 0
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-6 space-y-5">
-        {/* Header: Title + Delete */}
-        <div className="space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            <Input
-              value={title}
-              onChange={handleTitleChange}
-              className="text-lg font-semibold border-none shadow-none focus-visible:ring-0 px-0 h-auto hover:bg-accent/30 rounded-md transition-colors -ml-1 pl-1"
-              placeholder="任务标题"
-            />
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 text-muted-foreground hover:text-destructive shrink-0"
-                  aria-label="删除任务"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>确认删除</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    确定要删除任务「{task.title}」吗？此操作不可撤销，子任务也会一并删除。
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>取消</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    删除
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+      <div className="p-6 space-y-4">
+        {/* ===== Section 1: Core Info (always visible, front and center) ===== */}
 
-          {/* Status badge */}
-          {task.status === 'completed' && (
-            <Badge variant="secondary" className="gap-1">
-              <CheckCircle2 className="size-3" />
-              已完成
-              {task.completedAt && (
-                <span className="text-muted-foreground">
-                  · {format(parseISO(task.completedAt), 'M月d日', { locale: zhCN })}
-                </span>
-              )}
-            </Badge>
-          )}
+        {/* Title + Delete */}
+        <div className="flex items-start justify-between gap-2">
+          <Input
+            value={title}
+            onChange={handleTitleChange}
+            className="text-lg font-semibold border-none shadow-none focus-visible:ring-0 px-0 h-auto hover:bg-accent/30 rounded-md transition-colors -ml-1 pl-1"
+            placeholder="任务标题"
+          />
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground hover:text-destructive shrink-0"
+                aria-label="删除任务"
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认删除</AlertDialogTitle>
+                <AlertDialogDescription>
+                  确定要删除任务「{task.title}」吗？此操作不可撤销，子任务也会一并删除。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  删除
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
-        <Separator />
+        {/* Status badge */}
+        {task.status === 'completed' && (
+          <Badge variant="secondary" className="gap-1">
+            <CheckCircle2 className="size-3" />
+            已完成
+            {task.completedAt && (
+              <span className="text-muted-foreground">
+                · {format(parseISO(task.completedAt), 'M月d日', { locale: zhCN })}
+              </span>
+            )}
+          </Badge>
+        )}
 
-        {/* Properties Grid */}
-        <div className="space-y-3">
-          {/* Priority */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
-              <Flag className={cn('size-4', getPriorityColor(task.priority))} />
-              <span className="text-xs text-muted-foreground">优先级</span>
-            </div>
-            <Select value={task.priority} onValueChange={handlePriorityChange}>
-              <SelectTrigger className="h-8 text-sm flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">无</SelectItem>
-                <SelectItem value="low">低</SelectItem>
-                <SelectItem value="medium">中</SelectItem>
-                <SelectItem value="high">高</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Description (always visible, part of core editing experience) */}
+        <Textarea
+          value={description}
+          onChange={handleDescriptionChange}
+          placeholder="添加备注..."
+          className="min-h-[80px] resize-none border-muted/60 text-sm focus:border-primary/30 transition-colors"
+        />
 
-          {/* Category */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
-              <FolderOpen className="size-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">分类</span>
-            </div>
-            <Select
-              value={task.categoryId ?? 'none'}
-              onValueChange={handleCategoryChange}
-            >
-              <SelectTrigger className="h-8 text-sm flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">无分类</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="size-2.5 rounded-full"
-                        style={{ backgroundColor: cat.color || '#94a3b8' }}
-                      />
-                      {cat.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Due Date */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
-              <CalendarDays className="size-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">截止</span>
-            </div>
+        {/* ===== Section 2: Quick Property Toolbar (compact icon buttons) ===== */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <TooltipProvider delayDuration={300}>
+            {/* Priority */}
             <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    'h-8 text-sm font-normal flex-1 justify-start',
-                    !dueDate && 'text-muted-foreground'
-                  )}
-                >
-                  {dueDate
-                    ? format(dueDate, 'yyyy年M月d日', { locale: zhCN })
-                    : '选择日期'}
-                </Button>
-              </PopoverTrigger>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'h-7 gap-1.5 text-xs font-normal',
+                        task.priority !== 'none' && 'border-current'
+                      )}
+                    >
+                      <Flag className={cn('size-3.5', getPriorityColor(task.priority))} />
+                      {task.priority !== 'none' && (
+                        <span>
+                          {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
+                        </span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>优先级</TooltipContent>
+              </Tooltip>
+              <PopoverContent className="w-36 p-1" align="start">
+                {(['none', 'low', 'medium', 'high'] as const).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => handlePriorityChange(p)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors',
+                      task.priority === p && 'bg-accent font-medium'
+                    )}
+                  >
+                    <Flag className={cn('size-3.5', getPriorityColor(p))} />
+                    {p === 'none' ? '无' : p === 'low' ? '低' : p === 'medium' ? '中' : '高'}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+
+            {/* Due Date */}
+            <Popover>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'h-7 gap-1.5 text-xs font-normal',
+                        dueDate && 'border-primary/40 text-primary'
+                      )}
+                    >
+                      <CalendarDays className="size-3.5" />
+                      {dueDate
+                        ? format(dueDate, 'M月d日', { locale: zhCN })
+                        : null}
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>截止日期</TooltipContent>
+              </Tooltip>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
@@ -863,70 +896,98 @@ export function TaskDetail() {
                 )}
               </PopoverContent>
             </Popover>
-          </div>
 
-          {/* Tags */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
-              <Tag className="size-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">标签</span>
-            </div>
-            <div className="flex-1">
-              <TagSelector task={task} />
-            </div>
-          </div>
+            {/* Category */}
+            <Popover>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'h-7 gap-1.5 text-xs font-normal',
+                        task.categoryId && 'border-primary/40 text-primary'
+                      )}
+                    >
+                      <FolderOpen className="size-3.5" />
+                      {task.categoryId
+                        ? categories.find((c) => c.id === task.categoryId)?.name
+                        : null}
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>分类</TooltipContent>
+              </Tooltip>
+              <PopoverContent className="w-44 p-1" align="start">
+                <button
+                  onClick={() => handleCategoryChange('none')}
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors',
+                    !task.categoryId && 'bg-accent font-medium'
+                  )}
+                >
+                  无分类
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCategoryChange(cat.id)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors',
+                      task.categoryId === cat.id && 'bg-accent font-medium'
+                    )}
+                  >
+                    <span
+                      className="size-2.5 rounded-full"
+                      style={{ backgroundColor: cat.color || '#94a3b8' }}
+                    />
+                    {cat.name}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
 
-          {/* Recurrence */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
-              <Repeat className="size-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">重复</span>
-            </div>
-            <div className="flex-1">
-              <RecurrenceSettings
-                recurrenceRule={task.recurrenceRule}
-                onChange={handleRecurrenceChange}
-              />
-            </div>
-          </div>
+            {/* Tags */}
+            <TagSelector task={task} />
 
-          {/* Reminder */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 w-[5.5rem] shrink-0">
-              <Bell className="size-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">提醒</span>
-            </div>
-            <div className="flex-1">
-              <ReminderSettings
-                reminderTime={task.reminderTime}
-                onChange={handleReminderChange}
-              />
-            </div>
-          </div>
-        </div>
+            {/* Recurrence */}
+            <RecurrenceSettings
+              recurrenceRule={task.recurrenceRule}
+              onChange={handleRecurrenceChange}
+            />
 
-        <Separator />
-
-        {/* Description */}
-        <div className="space-y-2">
-          <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            备注
-          </h4>
-          <Textarea
-            value={description}
-            onChange={handleDescriptionChange}
-            placeholder="添加备注..."
-            className="min-h-[100px] resize-none border-muted/60 text-sm focus:border-primary/30 transition-colors"
-          />
+            {/* Reminder */}
+            <ReminderSettings
+              reminderTime={task.reminderTime}
+              onChange={handleReminderChange}
+            />
+          </TooltipProvider>
         </div>
 
         <Separator className="opacity-60" />
 
-        {/* Sub-tasks */}
-        <SubTaskList task={task} />
+        {/* ===== Section 3: Sub-tasks (collapsible, reduces initial noise) ===== */}
+        <Collapsible defaultOpen={hasSubTasks}>
+          <CollapsibleTrigger className="flex w-full items-center gap-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors group">
+            <ChevronRight className="size-3.5 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+            <ListChecks className="size-3.5" />
+            <span>子任务</span>
+            {hasSubTasks && (
+              <span className="text-muted-foreground/60">
+                {subTasks.filter((s) => s.completed).length}/{subTasks.length}
+              </span>
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="pt-2">
+              <SubTaskList task={task} />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* Footer metadata */}
-        <div className="pt-6 pb-2 text-[11px] text-muted-foreground/50 space-y-0.5">
+        <div className="pt-4 pb-2 text-[11px] text-muted-foreground/40 space-y-0.5">
           <p>创建于 {format(parseISO(task.createdAt), 'yyyy年M月d日 HH:mm', { locale: zhCN })}</p>
           <p>更新于 {format(parseISO(task.updatedAt), 'yyyy年M月d日 HH:mm', { locale: zhCN })}</p>
         </div>
