@@ -54,6 +54,9 @@ export class TaskService {
       id: row.id,
       taskId: row.taskId,
       title: row.title,
+      description: row.description ?? null,
+      priority: (row.priority ?? 'none') as SubTask['priority'],
+      dueDate: row.dueDate ?? null,
       completed: row.completed,
       sortOrder: row.sortOrder,
       createdAt: row.createdAt,
@@ -247,6 +250,9 @@ export class TaskService {
       id,
       taskId,
       title: input.title.trim(),
+      description: input.description ?? null,
+      priority: input.priority ?? ('none' as const),
+      dueDate: input.dueDate ?? null,
       completed: false,
       sortOrder: input.sortOrder ?? (maxOrder?.max ?? -1) + 1,
       createdAt: now,
@@ -268,6 +274,9 @@ export class TaskService {
 
     const updates: Record<string, unknown> = {}
     if (input.title !== undefined) updates.title = input.title.trim()
+    if (input.description !== undefined) updates.description = input.description
+    if (input.priority !== undefined) updates.priority = input.priority
+    if (input.dueDate !== undefined) updates.dueDate = input.dueDate
     if (input.completed !== undefined) updates.completed = input.completed
     if (input.sortOrder !== undefined) updates.sortOrder = input.sortOrder
 

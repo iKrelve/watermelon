@@ -41,6 +41,9 @@ function createTestDb(): { db: BetterSQLite3Database<typeof schema>; rawDb: Data
       id TEXT PRIMARY KEY,
       task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
       title TEXT NOT NULL,
+      description TEXT,
+      priority TEXT NOT NULL DEFAULT 'none',
+      due_date TEXT,
       completed INTEGER NOT NULL DEFAULT 0,
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL

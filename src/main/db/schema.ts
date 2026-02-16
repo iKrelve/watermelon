@@ -37,6 +37,11 @@ export const subTasks = sqliteTable('sub_tasks', {
     .notNull()
     .references(() => tasks.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
+  description: text('description'),
+  priority: text('priority', { enum: ['none', 'low', 'medium', 'high'] })
+    .notNull()
+    .default('none'),
+  dueDate: text('due_date'), // ISO 8601 date string (YYYY-MM-DD)
   completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
   sortOrder: integer('sort_order').notNull().default(0),
   createdAt: text('created_at').notNull(),
