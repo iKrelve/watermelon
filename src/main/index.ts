@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow } from 'electron'
+import { app, shell, BrowserWindow, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDatabase, closeDatabase } from './db'
@@ -39,6 +39,14 @@ function initServices(): void {
 }
 
 function createWindow(): void {
+  const iconPath = join(__dirname, '../../build/icon_1024.png')
+  const appIcon = nativeImage.createFromPath(iconPath)
+
+  // Set macOS dock icon
+  if (process.platform === 'darwin' && !appIcon.isEmpty()) {
+    app.dock.setIcon(appIcon)
+  }
+
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -46,6 +54,7 @@ function createWindow(): void {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
+    icon: appIcon,
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 16, y: 16 },
     webPreferences: {
