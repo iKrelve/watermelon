@@ -140,7 +140,7 @@ export class NotificationService {
   private deliverNotification(taskId: string, title: string): void {
     if (Notification.isSupported()) {
       const notification = new Notification({
-        title: 'Watermelon 提醒',
+        title: '小西瓜提醒',
         body: title,
         silent: false,
       })

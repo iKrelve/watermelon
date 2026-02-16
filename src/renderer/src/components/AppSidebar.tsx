@@ -155,9 +155,37 @@ export function AppSidebar(): React.JSX.Element {
         {/* App Header */}
         <SidebarHeader className="px-4 pb-2 pt-0">
           <div className="flex items-center gap-2.5">
-            <span className="text-lg leading-none">🍉</span>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 32 32"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="shrink-0"
+            >
+              {/* 西瓜切片 - 绿色外皮 */}
+              <path
+                d="M4 24C4 13.507 12.507 5 23 5L28 5C28 5 28 10 28 12C28 22.493 19.493 28 9 28L4 28C4 28 4 25 4 24Z"
+                fill="#4ade80"
+              />
+              {/* 白色内皮 */}
+              <path
+                d="M6.5 23.5C6.5 14.94 13.44 8 22 8L25.5 8C25.5 8 25.5 11.5 25.5 13C25.5 21.56 18.56 25.5 10 25.5L6.5 25.5C6.5 25.5 6.5 24 6.5 23.5Z"
+                fill="#bbf7d0"
+              />
+              {/* 红色果肉 */}
+              <path
+                d="M9 22C9 15.373 14.373 10.5 21 10.5L23 10.5C23 10.5 23 12.5 23 14C23 20.627 17.627 23 11 23L9 23C9 23 9 22.5 9 22Z"
+                fill="#f87171"
+              />
+              {/* 西瓜籽 */}
+              <ellipse cx="14" cy="17" rx="1" ry="1.4" fill="#1e293b" transform="rotate(-20 14 17)" />
+              <ellipse cx="17.5" cy="15" rx="1" ry="1.4" fill="#1e293b" transform="rotate(-10 17.5 15)" />
+              <ellipse cx="14.5" cy="20.5" rx="0.9" ry="1.2" fill="#1e293b" transform="rotate(-30 14.5 20.5)" />
+              <ellipse cx="18.5" cy="18.5" rx="0.9" ry="1.2" fill="#1e293b" transform="rotate(-15 18.5 18.5)" />
+            </svg>
             <span className="text-sm font-semibold tracking-tight text-foreground/90 group-data-[collapsible=icon]:hidden">
-              Watermelon
+              小西瓜
             </span>
           </div>
         </SidebarHeader>

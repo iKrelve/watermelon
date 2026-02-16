@@ -311,9 +311,10 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
 
 function AddTaskBar(): React.JSX.Element | null {
   const [title, setTitle] = useState('')
+  const [isFocused, setIsFocused] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { createTask, state } = useApp()
+  const { createTask, state, dispatch } = useApp()
 
   const handleSubmit = async (): Promise<void> => {
     const trimmed = title.trim()
@@ -321,7 +322,7 @@ function AddTaskBar(): React.JSX.Element | null {
 
     setIsSubmitting(true)
     try {
-      await createTask({
+      const task = await createTask({
         title: trimmed,
         categoryId:
           state.filterView === 'category' && state.filterCategoryId
@@ -329,6 +330,8 @@ function AddTaskBar(): React.JSX.Element | null {
             : undefined,
       })
       setTitle('')
+      // Auto-select the newly created task so user can immediately edit details
+      dispatch({ type: 'SELECT_TASK', payload: task.id })
       inputRef.current?.focus()
     } catch {
       // Will be handled by error handler
@@ -342,26 +345,56 @@ function AddTaskBar(): React.JSX.Element | null {
       e.preventDefault()
       handleSubmit()
     }
+    if (e.key === 'Escape') {
+      setTitle('')
+      inputRef.current?.blur()
+    }
   }
 
   // Don't show AddTaskBar in completed view
   if (state.filterView === 'completed') return null
 
   return (
-    <div className="border-t border-border/60 px-4 py-2.5">
+    <div
+      className={cn(
+        'border-b border-border/60 px-4 py-2.5 transition-colors duration-150',
+        isFocused ? 'bg-accent/30' : 'bg-transparent'
+      )}
+    >
       <div className="flex items-center gap-2.5">
-        <div className="flex size-5 items-center justify-center rounded-full bg-primary/10 shrink-0">
-          <Plus className="size-3 text-primary" />
+        <div
+          className={cn(
+            'flex size-5 items-center justify-center rounded-full shrink-0 transition-colors duration-150',
+            isFocused
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-primary/10 text-primary'
+          )}
+        >
+          <Plus className="size-3" />
         </div>
         <Input
           ref={inputRef}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="添加新任务..."
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          placeholder="添加新任务，按 Enter 确认"
           className="h-8 border-none shadow-none focus-visible:ring-0 px-0 text-[13px] placeholder:text-muted-foreground/50"
           disabled={isSubmitting}
         />
+        {title.trim() && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6 shrink-0 text-muted-foreground hover:text-primary"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            aria-label="添加任务"
+          >
+            <Plus className="size-3.5" />
+          </Button>
+        )}
       </div>
     </div>
   )
@@ -470,16 +503,20 @@ function SortMenu({
 // Empty state
 // ============================================================
 
-const EMPTY_STATE_CONFIG: Record<string, { icon: React.ReactNode; text: string; subtext?: string }> = {
+const EMPTY_STATE_CONFIG: Record<
+  string,
+  { icon: React.ReactNode; text: string; hint?: string; showAddButton?: boolean }
+> = {
   all: {
     icon: <Inbox className="size-10 text-muted-foreground/30" />,
     text: '收件箱是空的',
-    subtext: '按 Cmd+N 添加第一个任务',
+    hint: '在上方输入框中创建你的第一个任务',
+    showAddButton: true,
   },
   today: {
     icon: <Sun className="size-10 text-muted-foreground/30" />,
     text: '今天没有待办任务',
-    subtext: '享受轻松的一天吧',
+    hint: '享受轻松的一天吧',
   },
   upcoming: {
     icon: <CalendarRange className="size-10 text-muted-foreground/30" />,
@@ -492,6 +529,8 @@ const EMPTY_STATE_CONFIG: Record<string, { icon: React.ReactNode; text: string; 
   category: {
     icon: <FolderOpen className="size-10 text-muted-foreground/30" />,
     text: '该分类下没有任务',
+    hint: '在上方输入框中添加任务到该分类',
+    showAddButton: true,
   },
   tag: {
     icon: <Tag className="size-10 text-muted-foreground/30" />,
@@ -499,19 +538,37 @@ const EMPTY_STATE_CONFIG: Record<string, { icon: React.ReactNode; text: string; 
   },
 }
 
-function EmptyState({ filterView }: { filterView: string }): React.JSX.Element {
+function EmptyState({
+  filterView,
+  onAddTask,
+}: {
+  filterView: string
+  onAddTask?: () => void
+}): React.JSX.Element {
   const config = EMPTY_STATE_CONFIG[filterView] ?? {
     icon: <ClipboardList className="size-10 text-muted-foreground/30" />,
     text: '没有找到匹配的任务',
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
       <div className="mb-4">{config.icon}</div>
       <p className="text-sm font-medium text-muted-foreground/70">{config.text}</p>
-      {config.subtext && (
-        <p className="mt-1 text-xs text-muted-foreground/50">{config.subtext}</p>
+      {config.hint && (
+        <p className="mt-1.5 text-xs text-muted-foreground/50">{config.hint}</p>
       )}
+      {config.showAddButton && onAddTask && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-4 gap-1.5 text-xs"
+          onClick={onAddTask}
+        >
+          <Plus className="size-3.5" />
+          创建任务
+        </Button>
+      )}
+      <p className="text-[11px] mt-3 text-muted-foreground/30">Cmd+N 快速创建</p>
     </div>
   )
 }
@@ -538,6 +595,13 @@ export function TaskList(): React.JSX.Element {
     state.filterTagIds
   )
 
+  const focusAddTask = (): void => {
+    const input = document.querySelector<HTMLInputElement>(
+      'input[placeholder="添加新任务，按 Enter 确认"]'
+    )
+    input?.focus()
+  }
+
   return (
     <div className="flex h-full flex-col">
       {/* List Header */}
@@ -554,10 +618,13 @@ export function TaskList(): React.JSX.Element {
         </div>
       </div>
 
+      {/* Quick Add Task Bar - at the top for better discoverability */}
+      <AddTaskBar />
+
       {/* Task Items */}
       <ScrollArea className="flex-1">
         {sortedTasks.length === 0 ? (
-          <EmptyState filterView={state.filterView} />
+          <EmptyState filterView={state.filterView} onAddTask={focusAddTask} />
         ) : (
           <div className="py-1.5 px-0.5">
             {sortedTasks.map((task) => (
@@ -570,9 +637,6 @@ export function TaskList(): React.JSX.Element {
           </div>
         )}
       </ScrollArea>
-
-      {/* Quick Add Task Bar */}
-      <AddTaskBar />
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import { sqliteTable, text, integer, primaryKey } from 'drizzle-orm/sqlite-core'
 
 // ============================================================
-// Database Schema for Watermelon Todo App
+// Database Schema for 小西瓜 Todo App
 // ============================================================
 
 export const categories = sqliteTable('categories', {

@@ -1,5 +1,5 @@
 // ============================================================
-// Shared Types for Watermelon Todo App
+// Shared Types for 小西瓜 Todo App
 // Used by both Main Process and Renderer Process
 // ============================================================
 
