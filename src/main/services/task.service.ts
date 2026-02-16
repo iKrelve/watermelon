@@ -136,7 +136,43 @@ export class TaskService {
       rows = this.db.select().from(tasks).all()
     }
 
-    return rows.map((r) => this.rowToTask(r))
+    const taskList = rows.map((r) => this.rowToTask(r))
+    if (taskList.length === 0) return taskList
+
+    // Batch-load all sub-tasks
+    const allSubTasks = this.db
+      .select()
+      .from(subTasks)
+      .orderBy(subTasks.sortOrder)
+      .all()
+    const subTasksByTaskId = new Map<string, typeof allSubTasks>()
+    for (const st of allSubTasks) {
+      const list = subTasksByTaskId.get(st.taskId) ?? []
+      list.push(st)
+      subTasksByTaskId.set(st.taskId, list)
+    }
+
+    // Batch-load all task-tag associations
+    const allTaskTags = this.db
+      .select({ taskId: taskTags.taskId, tag: tags })
+      .from(taskTags)
+      .innerJoin(tags, eq(taskTags.tagId, tags.id))
+      .all()
+    const tagsByTaskId = new Map<string, { id: string; name: string; color: string | null; createdAt: string }[]>()
+    for (const row of allTaskTags) {
+      const list = tagsByTaskId.get(row.taskId) ?? []
+      list.push({ id: row.tag.id, name: row.tag.name, color: row.tag.color, createdAt: row.tag.createdAt })
+      tagsByTaskId.set(row.taskId, list)
+    }
+
+    // Attach relations to each task
+    for (const task of taskList) {
+      const stRows = subTasksByTaskId.get(task.id)
+      task.subTasks = stRows ? stRows.map((r) => this.rowToSubTask(r)) : []
+      task.tags = tagsByTaskId.get(task.id) ?? []
+    }
+
+    return taskList
   }
 
   update(id: string, input: UpdateTaskInput): Task {
