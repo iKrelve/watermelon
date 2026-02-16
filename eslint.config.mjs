@@ -15,5 +15,12 @@ export default [
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }]
     }
   },
+  {
+    files: ['src/renderer/src/components/ui/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      'react-refresh/only-export-components': 'off'
+    }
+  },
   { ignores: ['out/', 'dist/', 'node_modules/'] }
 ]
