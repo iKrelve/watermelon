@@ -10,11 +10,16 @@
     "strict": true,
     "target": "ESNext",
     "outDir": "./out",
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["src/shared/*"]
+    },
     "types": ["electron-vite/node"]
   },
   "include": [
     "src/main/**/*",
     "src/preload/**/*",
+    "src/shared/**/*",
     "electron.vite.config.ts"
   ]
 }
