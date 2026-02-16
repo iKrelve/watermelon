@@ -30,7 +30,7 @@ import { filterToday, filterUpcoming } from '@/utils/date-filters'
 import { CategoryDialog } from '@/components/CategoryDialog'
 import { useState } from 'react'
 import {
-  Inbox,
+  ListTodo,
   CalendarDays,
   CalendarRange,
   CheckCircle2,
@@ -54,8 +54,8 @@ interface SmartFilterItem {
 const smartFilters: SmartFilterItem[] = [
   {
     id: 'all',
-    label: '收件箱',
-    icon: <Inbox className="size-4" />,
+    label: '全部',
+    icon: <ListTodo className="size-4" />,
     getBadge: (tasks) => tasks.filter((t) => t.status === 'todo').length,
   },
   {
@@ -78,7 +78,7 @@ const smartFilters: SmartFilterItem[] = [
   },
 ]
 
-export function AppSidebar() {
+export function AppSidebar(): React.JSX.Element {
   const { state, dispatch, createCategory, updateCategory, deleteCategory } = useApp()
   const { tasks, categories, tags, filterView, filterCategoryId } = state
 
@@ -149,17 +149,18 @@ export function AppSidebar() {
   return (
     <>
       <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+        {/* macOS drag region — accounts for hidden title bar + traffic lights */}
+        <div className="drag-region h-[38px] shrink-0" />
+
         {/* App Header */}
-        <SidebarHeader className="px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🍉</span>
-            <span className="text-sm font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
+        <SidebarHeader className="px-4 pb-2 pt-0">
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg leading-none">🍉</span>
+            <span className="text-sm font-semibold tracking-tight text-foreground/90 group-data-[collapsible=icon]:hidden">
               Watermelon
             </span>
           </div>
         </SidebarHeader>
-
-        <SidebarSeparator />
 
         <SidebarContent>
           {/* Smart Filters */}
@@ -191,9 +192,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <SidebarSeparator />
-
-          {/* Categories */}
+          {/* Categories — spacing instead of separator for cleaner look */}
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroup>
               <SidebarGroupLabel asChild>
@@ -203,7 +202,7 @@ export function AppSidebar() {
                   <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                 </CollapsibleTrigger>
               </SidebarGroupLabel>
-              <SidebarGroupAction onClick={handleAddCategory} title="添加分类">
+              <SidebarGroupAction onClick={handleAddCategory} title="添加分类" aria-label="添加分类">
                 <Plus className="size-4" />
               </SidebarGroupAction>
               <CollapsibleContent>
@@ -275,8 +274,6 @@ export function AppSidebar() {
               </CollapsibleContent>
             </SidebarGroup>
           </Collapsible>
-
-          <SidebarSeparator />
 
           {/* Tags */}
           <Collapsible defaultOpen className="group/collapsible">

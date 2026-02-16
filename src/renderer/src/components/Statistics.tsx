@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useApp } from '@/context/AppContext'
 import type { StatsSummary, DailyTrend } from '../../../shared/types'
 import {
@@ -59,8 +60,38 @@ export function Statistics() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground">加载统计数据...</p>
+      <div className="p-6 space-y-6 max-w-3xl mx-auto">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-20 mb-2" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+          <Skeleton className="h-8 w-28" />
+        </div>
+        {/* Cards skeleton */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-3 w-16" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-12 mb-1" />
+                <Skeleton className="h-3 w-10" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {/* Chart skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-4 w-28" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-[250px] w-full" />
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -187,11 +218,11 @@ export function Statistics() {
                     return `${d.getMonth() + 1}/${d.getDate()}`
                   }}
                   className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fill: 'var(--color-muted-foreground)' }}
                 />
                 <YAxis
                   className="text-xs"
-                  tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fill: 'var(--color-muted-foreground)' }}
                   allowDecimals={false}
                 />
                 <Tooltip
@@ -204,8 +235,8 @@ export function Statistics() {
                     name === 'completed' ? '完成' : '创建',
                   ]}
                   contentStyle={{
-                    backgroundColor: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
+                    backgroundColor: 'var(--color-popover)',
+                    border: '1px solid var(--color-border)',
                     borderRadius: '8px',
                     fontSize: '12px',
                   }}

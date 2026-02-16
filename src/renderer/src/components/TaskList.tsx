@@ -25,6 +25,13 @@ import {
   ArrowUpDown,
   Plus,
   X,
+  Inbox,
+  Sun,
+  CalendarRange,
+  CheckCircle2,
+  FolderOpen,
+  Tag,
+  ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -158,18 +165,18 @@ function useFilteredTasks(): Task[] {
 // TaskItem component
 // ============================================================
 
-function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }) {
+function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): React.JSX.Element {
   const { dispatch, completeTask } = useApp()
   const overdue = isOverdue(task)
   const isCompleted = task.status === 'completed'
   const subTaskCount = task.subTasks?.length ?? 0
   const completedSubTasks = task.subTasks?.filter((s) => s.completed).length ?? 0
 
-  const handleSelect = () => {
+  const handleSelect = (): void => {
     dispatch({ type: 'SELECT_TASK', payload: task.id })
   }
 
-  const handleComplete = async (checked: boolean | 'indeterminate') => {
+  const handleComplete = async (checked: boolean | 'indeterminate'): Promise<void> => {
     if (checked === true && !isCompleted) {
       try {
         await completeTask(task.id)
@@ -187,6 +194,7 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }) {
     <div
       role="button"
       tabIndex={0}
+      aria-label={`任务: ${task.title}${isCompleted ? ' (已完成)' : ''}${overdue ? ' (已过期)' : ''}`}
       onClick={handleSelect}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -195,22 +203,26 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }) {
         }
       }}
       className={cn(
-        'group flex items-start gap-3 px-4 py-2.5 border-b border-border/50 cursor-pointer transition-colors',
-        'hover:bg-accent/50',
-        isSelected && 'bg-accent',
-        overdue && !isCompleted && 'border-l-2 border-l-destructive'
+        'group flex items-start gap-3 px-4 py-3 cursor-pointer',
+        'rounded-lg mx-1.5 my-0.5',
+        'transition-all duration-150',
+        'hover:bg-accent/60',
+        'animate-list-enter',
+        isSelected && 'bg-accent shadow-sm',
+        overdue && !isCompleted && 'ring-1 ring-inset ring-destructive/20'
       )}
     >
       {/* Checkbox */}
-      <div className="pt-0.5" onClick={(e) => e.stopPropagation()}>
+      <div className="pt-0.5 no-drag" onClick={(e) => e.stopPropagation()}>
         <Checkbox
           checked={isCompleted}
           onCheckedChange={handleComplete}
+          aria-label={isCompleted ? '标记为未完成' : '标记为完成'}
           className={cn(
-            'size-4.5 rounded-full',
-            task.priority === 'high' && 'border-red-400',
-            task.priority === 'medium' && 'border-orange-400',
-            task.priority === 'low' && 'border-blue-400'
+            'size-[18px] rounded-full transition-colors',
+            task.priority === 'high' && 'border-red-400 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500',
+            task.priority === 'medium' && 'border-orange-400 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500',
+            task.priority === 'low' && 'border-blue-400 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500'
           )}
         />
       </div>
@@ -220,28 +232,15 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }) {
         {/* Title */}
         <p
           className={cn(
-            'text-sm leading-snug truncate',
+            'text-[13px] leading-snug truncate',
             isCompleted && 'line-through text-muted-foreground'
           )}
         >
           {task.title}
         </p>
 
-        {/* Meta row */}
-        <div className="flex items-center gap-2 mt-1 flex-wrap">
-          {/* Priority badge */}
-          {task.priority !== 'none' && (
-            <Badge
-              variant="outline"
-              className={cn(
-                'text-[10px] px-1.5 py-0 h-4',
-                getPriorityColor(task.priority)
-              )}
-            >
-              {getPriorityLabel(task.priority)}
-            </Badge>
-          )}
-
+        {/* Meta row — only show most important indicators */}
+        <div className="flex items-center gap-2 mt-1">
           {/* Due date */}
           {formattedDueDate && (
             <span
@@ -261,6 +260,19 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }) {
             </span>
           )}
 
+          {/* Priority badge — small dot instead of full badge */}
+          {task.priority !== 'none' && !formattedDueDate && (
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-[10px] px-1.5 py-0 h-4 border-0',
+                getPriorityColor(task.priority)
+              )}
+            >
+              {getPriorityLabel(task.priority)}
+            </Badge>
+          )}
+
           {/* Sub-task count */}
           {subTaskCount > 0 && (
             <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -274,26 +286,17 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }) {
             <Repeat className="size-3 text-muted-foreground" />
           )}
 
-          {/* Tags */}
+          {/* Tags — show only color dots to save space */}
           {task.tags && task.tags.length > 0 && (
-            <div className="flex items-center gap-1">
-              {task.tags.slice(0, 2).map((tag) => (
+            <div className="flex items-center gap-0.5 ml-auto">
+              {task.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag.id}
-                  className="inline-flex items-center gap-1 text-[10px] text-muted-foreground"
-                >
-                  <span
-                    className="size-1.5 rounded-full"
-                    style={{ backgroundColor: tag.color || '#94a3b8' }}
-                  />
-                  {tag.name}
-                </span>
+                  className="size-1.5 rounded-full"
+                  style={{ backgroundColor: tag.color || '#94a3b8' }}
+                  title={tag.name}
+                />
               ))}
-              {task.tags.length > 2 && (
-                <span className="text-[10px] text-muted-foreground">
-                  +{task.tags.length - 2}
-                </span>
-              )}
             </div>
           )}
         </div>
@@ -306,13 +309,13 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }) {
 // AddTaskBar component
 // ============================================================
 
-function AddTaskBar() {
+function AddTaskBar(): React.JSX.Element | null {
   const [title, setTitle] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const { createTask, state } = useApp()
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     const trimmed = title.trim()
     if (!trimmed || isSubmitting) return
 
@@ -320,7 +323,6 @@ function AddTaskBar() {
     try {
       await createTask({
         title: trimmed,
-        // Automatically assign category if viewing a category filter
         categoryId:
           state.filterView === 'category' && state.filterCategoryId
             ? state.filterCategoryId
@@ -335,7 +337,7 @@ function AddTaskBar() {
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSubmit()
@@ -346,16 +348,18 @@ function AddTaskBar() {
   if (state.filterView === 'completed') return null
 
   return (
-    <div className="border-t border-border px-3 py-2">
-      <div className="flex items-center gap-2">
-        <Plus className="size-4 text-muted-foreground shrink-0" />
+    <div className="border-t border-border/60 px-4 py-2.5">
+      <div className="flex items-center gap-2.5">
+        <div className="flex size-5 items-center justify-center rounded-full bg-primary/10 shrink-0">
+          <Plus className="size-3 text-primary" />
+        </div>
         <Input
           ref={inputRef}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="添加新任务..."
-          className="h-8 border-none shadow-none focus-visible:ring-0 px-0 text-sm placeholder:text-muted-foreground/60"
+          className="h-8 border-none shadow-none focus-visible:ring-0 px-0 text-[13px] placeholder:text-muted-foreground/50"
           disabled={isSubmitting}
         />
       </div>
@@ -367,26 +371,30 @@ function AddTaskBar() {
 // SearchBar component
 // ============================================================
 
-function SearchBar() {
+function SearchBar(): React.JSX.Element {
   const { state, dispatch } = useApp()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const toggleSearch = () => {
+  const toggleSearch = (): void => {
     if (isSearchOpen) {
       dispatch({ type: 'SET_SEARCH_QUERY', payload: '' })
       setIsSearchOpen(false)
     } else {
       setIsSearchOpen(true)
-      // Focus the input after it renders
       setTimeout(() => inputRef.current?.focus(), 50)
     }
   }
 
   return (
     <div className="flex items-center gap-1">
-      {isSearchOpen && (
-        <div className="relative flex-1">
+      <div
+        className={cn(
+          'overflow-hidden transition-all duration-200 ease-out',
+          isSearchOpen ? 'w-40 opacity-100' : 'w-0 opacity-0'
+        )}
+      >
+        <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
           <Input
             ref={inputRef}
@@ -395,10 +403,11 @@ function SearchBar() {
               dispatch({ type: 'SET_SEARCH_QUERY', payload: e.target.value })
             }
             placeholder="搜索任务..."
-            className="h-7 pl-7 pr-7 text-xs border-muted"
+            className="h-7 pl-7 pr-7 text-xs border-muted rounded-md"
           />
           {state.searchQuery && (
             <button
+              aria-label="清除搜索"
               onClick={() => dispatch({ type: 'SET_SEARCH_QUERY', payload: '' })}
               className="absolute right-2 top-1/2 -translate-y-1/2"
             >
@@ -406,12 +415,13 @@ function SearchBar() {
             </button>
           )}
         </div>
-      )}
+      </div>
       <Button
         variant="ghost"
         size="icon"
         className="size-7 shrink-0"
         onClick={toggleSearch}
+        aria-label={isSearchOpen ? '关闭搜索' : '搜索'}
       >
         {isSearchOpen ? (
           <X className="size-3.5" />
@@ -433,11 +443,11 @@ function SortMenu({
 }: {
   sortOption: SortOption
   onSortChange: (option: SortOption) => void
-}) {
+}): React.JSX.Element {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="size-7 shrink-0">
+        <Button variant="ghost" size="icon" className="size-7 shrink-0" aria-label="排序方式">
           <ArrowUpDown className="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
@@ -460,21 +470,48 @@ function SortMenu({
 // Empty state
 // ============================================================
 
-function EmptyState({ filterView }: { filterView: string }) {
-  const messages: Record<string, { emoji: string; text: string }> = {
-    all: { emoji: '📭', text: '收件箱是空的，添加一个新任务吧' },
-    today: { emoji: '☀️', text: '今天没有待办任务' },
-    upcoming: { emoji: '📅', text: '未来 7 天没有安排' },
-    completed: { emoji: '🎉', text: '还没有已完成的任务' },
-    category: { emoji: '📁', text: '该分类下没有任务' },
-    tag: { emoji: '🏷️', text: '该标签下没有任务' },
+const EMPTY_STATE_CONFIG: Record<string, { icon: React.ReactNode; text: string; subtext?: string }> = {
+  all: {
+    icon: <Inbox className="size-10 text-muted-foreground/30" />,
+    text: '收件箱是空的',
+    subtext: '按 Cmd+N 添加第一个任务',
+  },
+  today: {
+    icon: <Sun className="size-10 text-muted-foreground/30" />,
+    text: '今天没有待办任务',
+    subtext: '享受轻松的一天吧',
+  },
+  upcoming: {
+    icon: <CalendarRange className="size-10 text-muted-foreground/30" />,
+    text: '未来 7 天没有安排',
+  },
+  completed: {
+    icon: <CheckCircle2 className="size-10 text-muted-foreground/30" />,
+    text: '还没有已完成的任务',
+  },
+  category: {
+    icon: <FolderOpen className="size-10 text-muted-foreground/30" />,
+    text: '该分类下没有任务',
+  },
+  tag: {
+    icon: <Tag className="size-10 text-muted-foreground/30" />,
+    text: '该标签下没有任务',
+  },
+}
+
+function EmptyState({ filterView }: { filterView: string }): React.JSX.Element {
+  const config = EMPTY_STATE_CONFIG[filterView] ?? {
+    icon: <ClipboardList className="size-10 text-muted-foreground/30" />,
+    text: '没有找到匹配的任务',
   }
-  const msg = messages[filterView] ?? { emoji: '📋', text: '没有找到匹配的任务' }
 
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-      <span className="text-3xl mb-3">{msg.emoji}</span>
-      <p className="text-sm">{msg.text}</p>
+    <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+      <div className="mb-4">{config.icon}</div>
+      <p className="text-sm font-medium text-muted-foreground/70">{config.text}</p>
+      {config.subtext && (
+        <p className="mt-1 text-xs text-muted-foreground/50">{config.subtext}</p>
+      )}
     </div>
   )
 }
@@ -483,7 +520,7 @@ function EmptyState({ filterView }: { filterView: string }) {
 // TaskList (main export)
 // ============================================================
 
-export function TaskList() {
+export function TaskList(): React.JSX.Element {
   const { state } = useApp()
   const filteredTasks = useFilteredTasks()
   const [sortOption, setSortOption] = useState<SortOption>('default')
@@ -504,10 +541,10 @@ export function TaskList() {
   return (
     <div className="flex h-full flex-col">
       {/* List Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold truncate">{title}</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="text-base font-semibold tracking-tight truncate">{title}</h2>
+          <p className="text-[11px] text-muted-foreground/70 mt-0.5">
             {sortedTasks.length} 个任务
           </p>
         </div>
@@ -522,7 +559,7 @@ export function TaskList() {
         {sortedTasks.length === 0 ? (
           <EmptyState filterView={state.filterView} />
         ) : (
-          <div className="py-1">
+          <div className="py-1.5 px-0.5">
             {sortedTasks.map((task) => (
               <TaskItem
                 key={task.id}
