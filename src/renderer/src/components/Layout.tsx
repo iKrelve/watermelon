@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 import { TaskList } from '@/components/TaskList'
@@ -30,6 +31,14 @@ export function Layout(): React.JSX.Element {
   const { state, dispatch } = useApp()
   useKeyboardShortcuts()
 
+  // On mount, sync window size if app was last left in compact mode
+  useEffect(() => {
+    if (state.compactMode) {
+      window.api.setCompactMode(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const exitCompactMode = (): void => {
     dispatch({ type: 'TOGGLE_COMPACT_MODE' })
   }
@@ -60,11 +69,9 @@ export function Layout(): React.JSX.Element {
           </div>
         </div>
 
-        {/* Centered task list */}
-        <div className="flex flex-1 justify-center overflow-hidden">
-          <div className="flex w-full max-w-3xl flex-col">
-            <TaskList />
-          </div>
+        {/* Task list fills the compact window */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <TaskList />
         </div>
       </div>
     )

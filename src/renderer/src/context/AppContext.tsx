@@ -137,6 +137,8 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'TOGGLE_COMPACT_MODE': {
       const next = !state.compactMode
       localStorage.setItem('watermelon:compactMode', String(next))
+      // Resize window via main process
+      window.api.setCompactMode(next)
       return { ...state, compactMode: next }
     }
     default:

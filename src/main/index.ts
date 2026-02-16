@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, nativeImage } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDatabase, closeDatabase } from './db'
@@ -9,8 +9,12 @@ import { SearchService } from './services/search.service'
 import { NotificationService } from './services/notification.service'
 import { StatisticsService } from './services/statistics.service'
 import { registerIpcHandlers } from './ipc/handlers'
+import { IPC_CHANNELS } from '../shared/ipc-channels'
 
 let notificationService: NotificationService | null = null
+
+// Saved normal-mode window bounds so we can restore after compact mode
+let savedBounds: Electron.Rectangle | null = null
 
 function initServices(): void {
   const dbPath = join(app.getPath('userData'), 'watermelon.db')
@@ -88,6 +92,35 @@ app.whenReady().then(() => {
 
   // Initialize database and services before creating window
   initServices()
+
+  // Compact-mode window resizing
+  ipcMain.handle(IPC_CHANNELS.WINDOW_SET_COMPACT_MODE, (_event, compact: boolean) => {
+    const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    if (!win) return
+
+    if (compact) {
+      // Save current bounds before shrinking
+      savedBounds = win.getBounds()
+      const COMPACT_WIDTH = 420
+      const COMPACT_HEIGHT = 600
+      const currentBounds = win.getBounds()
+      // Center the compact window relative to the previous position
+      const x = Math.round(currentBounds.x + (currentBounds.width - COMPACT_WIDTH) / 2)
+      const y = Math.round(currentBounds.y + (currentBounds.height - COMPACT_HEIGHT) / 2)
+      win.setMinimumSize(360, 400)
+      win.setBounds({ x, y, width: COMPACT_WIDTH, height: COMPACT_HEIGHT }, true)
+    } else {
+      // Restore previous bounds
+      win.setMinimumSize(800, 600)
+      if (savedBounds) {
+        win.setBounds(savedBounds, true)
+        savedBounds = null
+      } else {
+        win.setBounds({ width: 1200, height: 800 } as Electron.Rectangle, true)
+        win.center()
+      }
+    }
+  })
 
   createWindow()
 
