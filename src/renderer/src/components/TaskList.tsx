@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react'
+import { useMemo, useState, useRef, useCallback } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
@@ -20,7 +20,7 @@ import {
 } from '@/utils/priority'
 import { format, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import type { Task } from '../../../shared/types'
+import type { Task, SubTask } from '../../../shared/types'
 import {
   CalendarDays,
   AlertCircle,
@@ -37,6 +37,8 @@ import {
   FolderOpen,
   Tag,
   ClipboardList,
+  ChevronRight,
+  ChevronDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -167,15 +169,105 @@ function useFilteredTasks(): Task[] {
 }
 
 // ============================================================
+// SubTaskRow — compact sub-task row shown inside TaskItem
+// ============================================================
+
+function SubTaskRow({
+  subTask,
+  onToggle,
+}: {
+  subTask: SubTask
+  onToggle: (id: string, completed: boolean) => void
+}): React.JSX.Element {
+  const formattedDueDate = subTask.dueDate
+    ? format(parseISO(subTask.dueDate), 'M月d日', { locale: zhCN })
+    : null
+
+  const isOverdueSubTask =
+    subTask.dueDate &&
+    !subTask.completed &&
+    new Date(subTask.dueDate) < new Date(new Date().toDateString())
+
+  return (
+    <div
+      className={cn(
+        'relative flex items-center gap-2 py-1 pl-2 pr-1',
+        'hover:bg-accent/40 rounded transition-colors'
+      )}
+    >
+      {/* Sub-task priority stripe */}
+      {subTask.priority !== 'none' && (
+        <div
+          className={cn(
+            'absolute left-0 top-1 bottom-1 w-[2px] rounded-full',
+            getPriorityStripeColor(subTask.priority)
+          )}
+        />
+      )}
+
+      <div onClick={(e) => e.stopPropagation()}>
+        <Checkbox
+          checked={subTask.completed}
+          onCheckedChange={(checked) => onToggle(subTask.id, checked === true)}
+          className={cn(
+            'size-3 rounded-full transition-colors',
+            subTask.priority === 'high' &&
+              'border-red-400 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500',
+            subTask.priority === 'medium' &&
+              'border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500',
+            subTask.priority === 'low' &&
+              'border-blue-400 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500'
+          )}
+        />
+      </div>
+
+      <span
+        className={cn(
+          'flex-1 min-w-0 text-[12px] truncate',
+          subTask.completed && 'line-through text-muted-foreground'
+        )}
+      >
+        {subTask.title}
+      </span>
+
+      {/* Inline indicators */}
+      {subTask.priority !== 'none' && (
+        <Badge
+          variant="secondary"
+          className={cn(
+            'text-[8px] px-1 py-0 h-3 border-0 font-medium shrink-0',
+            getPriorityBadgeClasses(subTask.priority)
+          )}
+        >
+          {getPriorityLabel(subTask.priority)}
+        </Badge>
+      )}
+      {formattedDueDate && (
+        <span
+          className={cn(
+            'text-[10px] shrink-0',
+            isOverdueSubTask ? 'text-destructive' : 'text-muted-foreground'
+          )}
+        >
+          {formattedDueDate}
+        </span>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
 // TaskItem component
 // ============================================================
 
 function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): React.JSX.Element {
-  const { dispatch, completeTask } = useApp()
+  const { dispatch, completeTask, updateSubTask, refreshTasks } = useApp()
   const overdue = isOverdue(task)
   const isCompleted = task.status === 'completed'
-  const subTaskCount = task.subTasks?.length ?? 0
-  const completedSubTasks = task.subTasks?.filter((s) => s.completed).length ?? 0
+  const subTasks = task.subTasks ?? []
+  const subTaskCount = subTasks.length
+  const completedSubTasks = subTasks.filter((s) => s.completed).length
+  const [expanded, setExpanded] = useState(subTaskCount > 0)
 
   const handleSelect = (): void => {
     dispatch({ type: 'SELECT_TASK', payload: task.id })
@@ -191,131 +283,183 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
     }
   }
 
+  const handleToggleSubTask = useCallback(
+    async (subTaskId: string, completed: boolean): Promise<void> => {
+      try {
+        await updateSubTask(subTaskId, { completed })
+        await refreshTasks()
+      } catch {
+        // Error handled globally
+      }
+    },
+    [updateSubTask, refreshTasks]
+  )
+
+  const toggleExpand = useCallback(
+    (e: React.MouseEvent): void => {
+      e.stopPropagation()
+      setExpanded((prev) => !prev)
+    },
+    []
+  )
+
   const formattedDueDate = task.dueDate
     ? format(parseISO(task.dueDate), 'M月d日', { locale: zhCN })
     : null
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      aria-label={`任务: ${task.title}${isCompleted ? ' (已完成)' : ''}${overdue ? ' (已过期)' : ''}`}
-      onClick={handleSelect}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          handleSelect()
-        }
-      }}
-      className={cn(
-        'group relative flex items-center gap-3 px-4 py-3 cursor-pointer',
-        'rounded-lg mx-1.5 my-0.5',
-        'transition-all duration-150',
-        'hover:bg-accent/60',
-        'animate-list-enter',
-        isSelected && 'bg-accent shadow-sm',
-        overdue && !isCompleted && 'ring-1 ring-inset ring-destructive/20'
-      )}
-    >
-      {/* Priority stripe */}
-      {task.priority !== 'none' && (
-        <div
-          className={cn(
-            'absolute left-0 top-2 bottom-2 w-[3px] rounded-full',
-            getPriorityStripeColor(task.priority)
-          )}
-        />
-      )}
+    <div className="animate-list-enter">
+      {/* Main task row */}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`任务: ${task.title}${isCompleted ? ' (已完成)' : ''}${overdue ? ' (已过期)' : ''}`}
+        onClick={handleSelect}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleSelect()
+          }
+        }}
+        className={cn(
+          'group relative flex items-center gap-3 px-4 py-3 cursor-pointer',
+          'rounded-lg mx-1.5 my-0.5',
+          'transition-all duration-150',
+          'hover:bg-accent/60',
+          isSelected && 'bg-accent shadow-sm',
+          overdue && !isCompleted && 'ring-1 ring-inset ring-destructive/20'
+        )}
+      >
+        {/* Priority stripe */}
+        {task.priority !== 'none' && (
+          <div
+            className={cn(
+              'absolute left-0 top-2 bottom-2 w-[3px] rounded-full',
+              getPriorityStripeColor(task.priority)
+            )}
+          />
+        )}
 
-      {/* Checkbox */}
-      <div className="no-drag shrink-0" onClick={(e) => e.stopPropagation()}>
-        <Checkbox
-          checked={isCompleted}
-          onCheckedChange={handleComplete}
-          aria-label={isCompleted ? '标记为未完成' : '标记为完成'}
-          className={cn(
-            'size-[18px] rounded-full transition-colors',
-            task.priority === 'high' && 'border-red-400 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500',
-            task.priority === 'medium' && 'border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500',
-            task.priority === 'low' && 'border-blue-400 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500'
-          )}
-        />
-      </div>
+        {/* Checkbox */}
+        <div className="no-drag shrink-0" onClick={(e) => e.stopPropagation()}>
+          <Checkbox
+            checked={isCompleted}
+            onCheckedChange={handleComplete}
+            aria-label={isCompleted ? '标记为未完成' : '标记为完成'}
+            className={cn(
+              'size-[18px] rounded-full transition-colors',
+              task.priority === 'high' && 'border-red-400 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500',
+              task.priority === 'medium' && 'border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500',
+              task.priority === 'low' && 'border-blue-400 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500'
+            )}
+          />
+        </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        {/* Title */}
-        <p
-          className={cn(
-            'text-[13px] leading-snug truncate',
-            isCompleted && 'line-through text-muted-foreground'
-          )}
-        >
-          {task.title}
-        </p>
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          {/* Title */}
+          <p
+            className={cn(
+              'text-[13px] leading-snug truncate',
+              isCompleted && 'line-through text-muted-foreground'
+            )}
+          >
+            {task.title}
+          </p>
 
-        {/* Meta row — only show most important indicators */}
-        <div className="flex items-center gap-2 mt-1">
-          {/* Due date */}
-          {formattedDueDate && (
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 text-[11px]',
-                overdue && !isCompleted
-                  ? 'text-destructive font-medium'
-                  : 'text-muted-foreground'
-              )}
-            >
-              {overdue && !isCompleted ? (
-                <AlertCircle className="size-3" />
-              ) : (
-                <CalendarDays className="size-3" />
-              )}
-              {formattedDueDate}
-            </span>
-          )}
+          {/* Meta row — only show most important indicators */}
+          <div className="flex items-center gap-2 mt-1">
+            {/* Due date */}
+            {formattedDueDate && (
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1 text-[11px]',
+                  overdue && !isCompleted
+                    ? 'text-destructive font-medium'
+                    : 'text-muted-foreground'
+                )}
+              >
+                {overdue && !isCompleted ? (
+                  <AlertCircle className="size-3" />
+                ) : (
+                  <CalendarDays className="size-3" />
+                )}
+                {formattedDueDate}
+              </span>
+            )}
 
-          {/* Priority badge — always visible with colored background */}
-          {task.priority !== 'none' && (
-            <Badge
-              variant="secondary"
-              className={cn(
-                'text-[10px] px-1.5 py-0 h-4 border-0 font-medium',
-                getPriorityBadgeClasses(task.priority)
-              )}
-            >
-              {getPriorityLabel(task.priority)}
-            </Badge>
-          )}
+            {/* Priority badge — always visible with colored background */}
+            {task.priority !== 'none' && (
+              <Badge
+                variant="secondary"
+                className={cn(
+                  'text-[10px] px-1.5 py-0 h-4 border-0 font-medium',
+                  getPriorityBadgeClasses(task.priority)
+                )}
+              >
+                {getPriorityLabel(task.priority)}
+              </Badge>
+            )}
 
-          {/* Sub-task count */}
-          {subTaskCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-              <ListChecks className="size-3" />
-              {completedSubTasks}/{subTaskCount}
-            </span>
-          )}
+            {/* Sub-task expand toggle */}
+            {subTaskCount > 0 && (
+              <button
+                type="button"
+                onClick={toggleExpand}
+                className={cn(
+                  'inline-flex items-center gap-1 text-[11px] text-muted-foreground',
+                  'hover:text-foreground transition-colors rounded px-1 -ml-1',
+                  expanded && 'text-foreground'
+                )}
+                aria-label={expanded ? '收起子任务' : '展开子任务'}
+              >
+                {expanded ? (
+                  <ChevronDown className="size-3" />
+                ) : (
+                  <ChevronRight className="size-3" />
+                )}
+                <ListChecks className="size-3" />
+                {completedSubTasks}/{subTaskCount}
+              </button>
+            )}
 
-          {/* Recurrence indicator */}
-          {task.recurrenceRule && (
-            <Repeat className="size-3 text-muted-foreground" />
-          )}
+            {/* Recurrence indicator */}
+            {task.recurrenceRule && (
+              <Repeat className="size-3 text-muted-foreground" />
+            )}
 
-          {/* Tags — show only color dots to save space */}
-          {task.tags && task.tags.length > 0 && (
-            <div className="flex items-center gap-0.5 ml-auto">
-              {task.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag.id}
-                  className="size-1.5 rounded-full"
-                  style={{ backgroundColor: tag.color || '#94a3b8' }}
-                  title={tag.name}
-                />
-              ))}
-            </div>
-          )}
+            {/* Tags — show only color dots to save space */}
+            {task.tags && task.tags.length > 0 && (
+              <div className="flex items-center gap-0.5 ml-auto">
+                {task.tags.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="size-1.5 rounded-full"
+                    style={{ backgroundColor: tag.color || '#94a3b8' }}
+                    title={tag.name}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Expandable sub-task list */}
+      {expanded && subTaskCount > 0 && (
+        <div
+          className="ml-11 mr-3 mb-1 border-l-2 border-border/50 pl-2 space-y-0.5 animate-in slide-in-from-top-1 duration-150"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {subTasks.map((st) => (
+            <SubTaskRow
+              key={st.id}
+              subTask={st}
+              onToggle={handleToggleSubTask}
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
