@@ -42,6 +42,7 @@ import {
   Pencil,
   Trash2,
   ChevronRight,
+  Minimize2,
 } from 'lucide-react'
 
 interface SmartFilterItem {
@@ -356,7 +357,7 @@ export function AppSidebar(): React.JSX.Element {
           </Collapsible>
         </SidebarContent>
 
-        {/* Footer - Stats Entry */}
+        {/* Footer - Stats & Compact Mode */}
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -367,6 +368,15 @@ export function AppSidebar(): React.JSX.Element {
               >
                 <BarChart3 className="size-4" />
                 <span>统计</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => dispatch({ type: 'TOGGLE_COMPACT_MODE' })}
+                tooltip="简洁模式 (⌘\)"
+              >
+                <Minimize2 className="size-4" />
+                <span>简洁模式</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

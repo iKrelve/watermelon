@@ -12,7 +12,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useApp } from '@/context/AppContext'
 import { filterToday, filterUpcoming, isOverdue } from '@/utils/date-filters'
-import { getPriorityColor, getPriorityLabel, sortByPriority } from '@/utils/priority'
+import {
+  getPriorityLabel,
+  getPriorityBadgeClasses,
+  getPriorityStripeColor,
+  sortByPriority
+} from '@/utils/priority'
 import { format, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import type { Task } from '../../../shared/types'
@@ -80,7 +85,7 @@ function getFilterTitle(
 ): string {
   switch (filterView) {
     case 'all':
-      return '收件箱'
+      return '全部'
     case 'today':
       return '今天'
     case 'upcoming':
@@ -203,7 +208,7 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
         }
       }}
       className={cn(
-        'group flex items-center gap-3 px-4 py-3 cursor-pointer',
+        'group relative flex items-center gap-3 px-4 py-3 cursor-pointer',
         'rounded-lg mx-1.5 my-0.5',
         'transition-all duration-150',
         'hover:bg-accent/60',
@@ -212,6 +217,16 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
         overdue && !isCompleted && 'ring-1 ring-inset ring-destructive/20'
       )}
     >
+      {/* Priority stripe */}
+      {task.priority !== 'none' && (
+        <div
+          className={cn(
+            'absolute left-0 top-2 bottom-2 w-[3px] rounded-full',
+            getPriorityStripeColor(task.priority)
+          )}
+        />
+      )}
+
       {/* Checkbox */}
       <div className="no-drag shrink-0" onClick={(e) => e.stopPropagation()}>
         <Checkbox
@@ -221,7 +236,7 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
           className={cn(
             'size-[18px] rounded-full transition-colors',
             task.priority === 'high' && 'border-red-400 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500',
-            task.priority === 'medium' && 'border-orange-400 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500',
+            task.priority === 'medium' && 'border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500',
             task.priority === 'low' && 'border-blue-400 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500'
           )}
         />
@@ -260,13 +275,13 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
             </span>
           )}
 
-          {/* Priority badge — small dot instead of full badge */}
-          {task.priority !== 'none' && !formattedDueDate && (
+          {/* Priority badge — always visible with colored background */}
+          {task.priority !== 'none' && (
             <Badge
-              variant="outline"
+              variant="secondary"
               className={cn(
-                'text-[10px] px-1.5 py-0 h-4 border-0',
-                getPriorityColor(task.priority)
+                'text-[10px] px-1.5 py-0 h-4 border-0 font-medium',
+                getPriorityBadgeClasses(task.priority)
               )}
             >
               {getPriorityLabel(task.priority)}
@@ -509,7 +524,7 @@ const EMPTY_STATE_CONFIG: Record<
 > = {
   all: {
     icon: <Inbox className="size-10 text-muted-foreground/30" />,
-    text: '收件箱是空的',
+    text: '任务列表是空的',
     hint: '在上方输入框中创建你的第一个任务',
     showAddButton: true,
   },

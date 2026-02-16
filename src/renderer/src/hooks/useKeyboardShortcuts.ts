@@ -9,6 +9,7 @@ import { useApp } from '@/context/AppContext'
  * - Cmd+D:     Delete selected task
  * - Delete:    Delete selected task
  * - Cmd+F:     Focus search
+ * - Cmd+\:     Toggle compact mode
  * - Escape:    Deselect task / close search
  * - ArrowUp:   Select previous task in list
  * - ArrowDown: Select next task in list
@@ -31,6 +32,13 @@ export function useKeyboardShortcuts() {
           'input[placeholder="添加新任务，按 Enter 确认"]'
         )
         addTaskInput?.focus()
+        return
+      }
+
+      // Cmd+\: Toggle compact mode
+      if (isMeta && e.key === '\\') {
+        e.preventDefault()
+        dispatch({ type: 'TOGGLE_COMPACT_MODE' })
         return
       }
 

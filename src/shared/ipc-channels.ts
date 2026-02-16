@@ -40,6 +40,9 @@ export const IPC_CHANNELS = {
   // Statistics
   STATS_GET: 'stats:get',
   STATS_DAILY_TREND: 'stats:dailyTrend',
+
+  // Window
+  WINDOW_SET_COMPACT_MODE: 'window:setCompactMode',
 } as const
 
 export type IpcChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
