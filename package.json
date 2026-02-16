@@ -1,7 +1,7 @@
 {
   "name": "watermelon",
   "version": "1.0.0",
-  "description": "A desktop application built with Electron, React, and Bun",
+  "description": "小西瓜 - macOS 极简 Todo 管理桌面应用",
   "main": "./out/main/index.js",
   "author": "",
   "license": "MIT",

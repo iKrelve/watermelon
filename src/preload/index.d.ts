@@ -18,7 +18,7 @@ import type {
 
 type ApiResult<T> = T | { __error: AppError }
 
-interface WatermelonApi {
+interface XiaoXiguaApi {
   // Task
   createTask(data: CreateTaskInput): Promise<ApiResult<Task>>
   updateTask(id: string, data: UpdateTaskInput): Promise<ApiResult<Task>>
@@ -60,6 +60,6 @@ interface WatermelonApi {
 declare global {
   interface Window {
     electron: ElectronAPI
-    api: WatermelonApi
+    api: XiaoXiguaApi
   }
 }

@@ -28,7 +28,7 @@ export function useKeyboardShortcuts() {
         e.preventDefault()
         // Find and focus the add-task input (identified by placeholder)
         const addTaskInput = document.querySelector<HTMLInputElement>(
-          'input[placeholder="添加新任务..."]'
+          'input[placeholder="添加新任务，按 Enter 确认"]'
         )
         addTaskInput?.focus()
         return

@@ -71,7 +71,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.watermelon')
+  electronApp.setAppUserModelId('com.xiao-xigua')
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
