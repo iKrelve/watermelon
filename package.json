@@ -9,6 +9,9 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
+    "build:mac": "electron-vite build && electron-builder --mac",
+    "build:mac:dmg": "electron-vite build && electron-builder --mac dmg",
+    "build:mac:zip": "electron-vite build && electron-builder --mac zip",
     "lint": "eslint .",
     "format": "prettier --write .",
     "postinstall": "electron-rebuild -f -w better-sqlite3",
@@ -33,6 +36,53 @@
     "tailwind-merge": "^3.4.1",
     "uuid": "^13.0.0"
   },
+  "build": {
+    "appId": "com.xiao-xigua.watermelon",
+    "productName": "小西瓜",
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["universal"]
+        },
+        {
+          "target": "zip",
+          "arch": ["universal"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
   "devDependencies": {
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@electron-toolkit/preload": "^3.0.2",
@@ -46,6 +96,7 @@
     "@vitejs/plugin-react": "^5.1.4",
     "drizzle-kit": "^0.31.9",
     "electron": "^40.4.1",
+    "electron-builder": "^26.7.0",
     "electron-vite": "^5.0.0",
     "eslint": "^9.28.0",
     "eslint-plugin-react-hooks": "^5.2.0",
