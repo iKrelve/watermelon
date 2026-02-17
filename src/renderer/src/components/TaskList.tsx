@@ -192,7 +192,8 @@ function SubTaskRow({
     <div
       className={cn(
         'relative flex items-center gap-2 py-1 pl-2 pr-1',
-        'hover:bg-accent/40 rounded transition-colors'
+        'hover:bg-accent/40 rounded transition-colors',
+        isOverdueSubTask && 'bg-destructive/5'
       )}
     >
       {/* Sub-task priority stripe */}
@@ -245,11 +246,13 @@ function SubTaskRow({
       {formattedDueDate && (
         <span
           className={cn(
-            'text-[10px] shrink-0',
-            isOverdueSubTask ? 'text-destructive' : 'text-muted-foreground'
+            'inline-flex items-center gap-0.5 text-[10px] shrink-0',
+            isOverdueSubTask ? 'text-destructive font-medium' : 'text-muted-foreground'
           )}
         >
+          {isOverdueSubTask && <AlertCircle className="size-2.5" />}
           {formattedDueDate}
+          {isOverdueSubTask && ' 已过期'}
         </span>
       )}
     </div>
@@ -327,7 +330,7 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
           'transition-all duration-150',
           'hover:bg-accent/60',
           isSelected && 'bg-accent shadow-sm',
-          overdue && !isCompleted && 'ring-1 ring-inset ring-destructive/20'
+          overdue && !isCompleted && 'ring-1 ring-inset ring-destructive/20 bg-destructive/5'
         )}
       >
         {/* Priority stripe */}
@@ -385,6 +388,7 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
                   <CalendarDays className="size-3" />
                 )}
                 {formattedDueDate}
+                {overdue && !isCompleted && ' 已过期'}
               </span>
             )}
 
