@@ -16,6 +16,7 @@ import { TagService } from '../services/tag.service'
 import { SearchService } from '../services/search.service'
 import { NotificationService } from '../services/notification.service'
 import { StatisticsService } from '../services/statistics.service'
+import { DataService } from '../services/data.service'
 
 function wrapError(error: unknown): AppError {
   if (error instanceof Error) {
@@ -42,7 +43,8 @@ export function registerIpcHandlers(
   tagService: TagService,
   searchService: SearchService,
   notificationService: NotificationService,
-  statisticsService: StatisticsService
+  statisticsService: StatisticsService,
+  dataService: DataService
 ): void {
   // === Task Operations ===
 
@@ -150,6 +152,13 @@ export function registerIpcHandlers(
     return handleAsync(() => tagService.create(name, color))
   })
 
+  ipcMain.handle(
+    IPC_CHANNELS.TAG_UPDATE,
+    (_event, id: string, name: string, color?: string) => {
+      return handleAsync(() => tagService.update(id, name, color))
+    }
+  )
+
   ipcMain.handle(IPC_CHANNELS.TAG_DELETE, (_event, id: string) => {
     return handleAsync(() => tagService.delete(id))
   })
@@ -207,5 +216,15 @@ export function registerIpcHandlers(
 
   ipcMain.handle(IPC_CHANNELS.STATS_DAILY_TREND, (_event, days: number) => {
     return handleAsync(() => statisticsService.getDailyTrend(days))
+  })
+
+  // === Data Management ===
+
+  ipcMain.handle(IPC_CHANNELS.DATA_EXPORT, () => {
+    return handleAsync(() => dataService.exportData())
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DATA_IMPORT, (_event, jsonStr: string) => {
+    return handleAsync(() => dataService.importData(jsonStr))
   })
 }

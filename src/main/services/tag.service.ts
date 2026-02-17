@@ -46,6 +46,35 @@ export class TagService {
     return this.rowToTag(row)
   }
 
+  update(id: string, name: string, color?: string): Tag {
+    const existing = this.db.select().from(tags).where(eq(tags.id, id)).get()
+    if (!existing) {
+      throw new Error('NOT_FOUND: Tag not found')
+    }
+
+    if (!name || name.trim().length === 0) {
+      throw new Error('VALIDATION_ERROR: Tag name must not be empty')
+    }
+
+    // Check for duplicate name (excluding current tag)
+    const duplicate = this.db
+      .select()
+      .from(tags)
+      .where(and(eq(tags.name, name.trim()), sql`${tags.id} != ${id}`))
+      .get()
+    if (duplicate) {
+      throw new Error('VALIDATION_ERROR: Tag name already exists')
+    }
+
+    const updates: Record<string, unknown> = { name: name.trim() }
+    if (color !== undefined) updates.color = color ?? null
+
+    this.db.update(tags).set(updates).where(eq(tags.id, id)).run()
+
+    const updated = this.db.select().from(tags).where(eq(tags.id, id)).get()
+    return this.rowToTag(updated!)
+  }
+
   getAll(): Tag[] {
     return this.db
       .select()

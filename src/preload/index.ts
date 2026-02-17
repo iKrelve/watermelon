@@ -40,6 +40,8 @@ const api = {
   // Tag operations
   createTag: (name: string, color?: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.TAG_CREATE, name, color),
+  updateTag: (id: string, name: string, color?: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.TAG_UPDATE, id, name, color),
   deleteTag: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.TAG_DELETE, id),
   getTags: () => ipcRenderer.invoke(IPC_CHANNELS.TAG_GET_ALL),
   addTagToTask: (taskId: string, tagId: string) =>
@@ -61,6 +63,10 @@ const api = {
   getStats: (period: 'day' | 'week' | 'month') =>
     ipcRenderer.invoke(IPC_CHANNELS.STATS_GET, period),
   getDailyTrend: (days: number) => ipcRenderer.invoke(IPC_CHANNELS.STATS_DAILY_TREND, days),
+
+  // Data management
+  exportData: () => ipcRenderer.invoke(IPC_CHANNELS.DATA_EXPORT),
+  importData: (jsonStr: string) => ipcRenderer.invoke(IPC_CHANNELS.DATA_IMPORT, jsonStr),
 
   // Window
   setCompactMode: (compact: boolean) =>

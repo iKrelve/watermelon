@@ -15,6 +15,7 @@ import type {
   TaskFilter,
 } from '../../shared/types'
 import { getNextOccurrence } from '../utils/recurrence'
+import { rowToTask, rowToSubTask } from '../utils/mappers'
 
 export class TaskService {
   constructor(
@@ -27,39 +28,6 @@ export class TaskService {
   private validateTitle(title: string): void {
     if (!title || title.trim().length === 0) {
       throw new Error('VALIDATION_ERROR: Title must not be empty or whitespace-only')
-    }
-  }
-
-  // ---- Row to Domain Object ----
-
-  private rowToTask(row: typeof tasks.$inferSelect): Task {
-    return {
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      status: row.status as Task['status'],
-      priority: row.priority as Task['priority'],
-      categoryId: row.categoryId,
-      dueDate: row.dueDate,
-      reminderTime: row.reminderTime,
-      recurrenceRule: row.recurrenceRule ? JSON.parse(row.recurrenceRule) : null,
-      completedAt: row.completedAt,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-    }
-  }
-
-  private rowToSubTask(row: typeof subTasks.$inferSelect): SubTask {
-    return {
-      id: row.id,
-      taskId: row.taskId,
-      title: row.title,
-      description: row.description ?? null,
-      priority: (row.priority ?? 'none') as SubTask['priority'],
-      dueDate: row.dueDate ?? null,
-      completed: row.completed,
-      sortOrder: row.sortOrder,
-      createdAt: row.createdAt,
     }
   }
 
@@ -87,14 +55,14 @@ export class TaskService {
     }
 
     this.db.insert(tasks).values(row).run()
-    return this.rowToTask(row)
+    return rowToTask(row)
   }
 
   getById(id: string): Task | null {
     const row = this.db.select().from(tasks).where(eq(tasks.id, id)).get()
     if (!row) return null
 
-    const task = this.rowToTask(row)
+    const task = rowToTask(row)
 
     // Load sub-tasks
     const subTaskRows = this.db
@@ -103,7 +71,7 @@ export class TaskService {
       .where(eq(subTasks.taskId, id))
       .orderBy(subTasks.sortOrder)
       .all()
-    task.subTasks = subTaskRows.map((r) => this.rowToSubTask(r))
+    task.subTasks = subTaskRows.map((r) => rowToSubTask(r))
 
     // Load tags
     const tagRows = this.db
@@ -136,7 +104,7 @@ export class TaskService {
       rows = this.db.select().from(tasks).all()
     }
 
-    const taskList = rows.map((r) => this.rowToTask(r))
+    const taskList = rows.map((r) => rowToTask(r))
     if (taskList.length === 0) return taskList
 
     // Batch-load all sub-tasks
@@ -168,7 +136,7 @@ export class TaskService {
     // Attach relations to each task
     for (const task of taskList) {
       const stRows = subTasksByTaskId.get(task.id)
-      task.subTasks = stRows ? stRows.map((r) => this.rowToSubTask(r)) : []
+      task.subTasks = stRows ? stRows.map((r) => rowToSubTask(r)) : []
       task.tags = tagsByTaskId.get(task.id) ?? []
     }
 
@@ -295,7 +263,7 @@ export class TaskService {
     }
 
     this.db.insert(subTasks).values(row).run()
-    return this.rowToSubTask(row)
+    return rowToSubTask(row)
   }
 
   updateSubTask(id: string, input: UpdateSubTaskInput): SubTask {
@@ -321,7 +289,7 @@ export class TaskService {
     }
 
     const updated = this.db.select().from(subTasks).where(eq(subTasks.id, id)).get()
-    return this.rowToSubTask(updated!)
+    return rowToSubTask(updated!)
   }
 
   deleteSubTask(id: string): void {
@@ -335,13 +303,13 @@ export class TaskService {
       .where(eq(subTasks.taskId, taskId))
       .orderBy(subTasks.sortOrder)
       .all()
-    return rows.map((r) => this.rowToSubTask(r))
+    return rows.map((r) => rowToSubTask(r))
   }
 
   /**
    * Get the total number of tasks in the database.
    */
-  count(filter?: { status?: string }): number {
+  count(filter?: { status?: Task['status'] }): number {
     if (filter?.status) {
       const result = this.db
         .select({ count: sql<number>`COUNT(*)` })

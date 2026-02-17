@@ -543,6 +543,7 @@ function AddTaskBar(): React.JSX.Element | null {
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder="添加新任务，按 Enter 确认"
+          data-shortcut-target="add-task"
           className="h-8 border-none shadow-none focus-visible:ring-0 px-0 text-[13px] placeholder:text-muted-foreground/50"
           disabled={isSubmitting}
         />
@@ -599,6 +600,7 @@ function SearchBar(): React.JSX.Element {
               dispatch({ type: 'SET_SEARCH_QUERY', payload: e.target.value })
             }
             placeholder="搜索任务..."
+            data-shortcut-target="search"
             className="h-7 pl-7 pr-7 text-xs border-muted rounded-md"
           />
           {state.searchQuery && (
@@ -617,6 +619,7 @@ function SearchBar(): React.JSX.Element {
         size="icon"
         className="size-7 shrink-0"
         onClick={toggleSearch}
+        data-shortcut-target="search-toggle"
         aria-label={isSearchOpen ? '关闭搜索' : '搜索'}
       >
         {isSearchOpen ? (
@@ -760,7 +763,7 @@ export function TaskList(): React.JSX.Element {
 
   const focusAddTask = (): void => {
     const input = document.querySelector<HTMLInputElement>(
-      'input[placeholder="添加新任务，按 Enter 确认"]'
+      '[data-shortcut-target="add-task"]'
     )
     input?.focus()
   }

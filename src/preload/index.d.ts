@@ -40,6 +40,7 @@ interface XiaoXiguaApi {
 
   // Tag
   createTag(name: string, color?: string): Promise<ApiResult<Tag>>
+  updateTag(id: string, name: string, color?: string): Promise<ApiResult<Tag>>
   deleteTag(id: string): Promise<ApiResult<void>>
   getTags(): Promise<ApiResult<Tag[]>>
   addTagToTask(taskId: string, tagId: string): Promise<ApiResult<void>>
@@ -55,6 +56,10 @@ interface XiaoXiguaApi {
   // Statistics
   getStats(period: 'day' | 'week' | 'month'): Promise<ApiResult<StatsSummary>>
   getDailyTrend(days: number): Promise<ApiResult<DailyTrend[]>>
+
+  // Data management
+  exportData(): Promise<ApiResult<string>>
+  importData(jsonStr: string): Promise<ApiResult<void>>
 
   // Window
   setCompactMode(compact: boolean): Promise<void>

@@ -8,6 +8,7 @@ import { TagService } from './services/tag.service'
 import { SearchService } from './services/search.service'
 import { NotificationService } from './services/notification.service'
 import { StatisticsService } from './services/statistics.service'
+import { DataService } from './services/data.service'
 import { registerIpcHandlers } from './ipc/handlers'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 
@@ -26,6 +27,7 @@ function initServices(): void {
   const searchService = new SearchService(db, tagService)
   notificationService = new NotificationService(db)
   const statisticsService = new StatisticsService(db)
+  const dataService = new DataService(db)
 
   // Register all IPC handlers
   registerIpcHandlers(
@@ -34,7 +36,8 @@ function initServices(): void {
     tagService,
     searchService,
     notificationService,
-    statisticsService
+    statisticsService,
+    dataService
   )
 
   // Check for missed reminders and schedule future ones
