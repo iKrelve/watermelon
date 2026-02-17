@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
-import { TaskList } from '@/components/TaskList'
+import { TaskList } from '@/components/task-list'
 import { TaskDetail } from '@/components/TaskDetail'
 import { Statistics } from '@/components/Statistics'
 import { CalendarView } from '@/components/CalendarView'
@@ -139,9 +139,10 @@ export function Layout(): React.JSX.Element {
           >
             {/* Middle Panel - Task List */}
             <ResizablePanel
-              defaultSize={35}
-              minSize={20}
-              maxSize={55}
+              id="task-list"
+              defaultSize="35%"
+              minSize="20%"
+              maxSize="55%"
               className="flex flex-col border-r border-border/60 bg-background"
             >
               <TaskList />
@@ -152,8 +153,9 @@ export function Layout(): React.JSX.Element {
 
             {/* Right Panel - Task Detail */}
             <ResizablePanel
-              defaultSize={65}
-              minSize={30}
+              id="task-detail"
+              defaultSize="65%"
+              minSize="30%"
               className="flex flex-col bg-background"
             >
               <div className="mx-auto w-full max-w-2xl flex-1 overflow-hidden">
