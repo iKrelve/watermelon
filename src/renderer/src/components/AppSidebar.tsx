@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useApp, type FilterView } from '@/context/AppContext'
+import { useTheme } from '@/components/ThemeProvider'
 import { filterToday, filterUpcoming } from '@/utils/date-filters'
 import { CategoryDialog } from '@/components/CategoryDialog'
 import { useState } from 'react'
@@ -43,6 +44,9 @@ import {
   Trash2,
   ChevronRight,
   Minimize2,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-react'
 
 interface SmartFilterItem {
@@ -82,6 +86,7 @@ const smartFilters: SmartFilterItem[] = [
 export function AppSidebar(): React.JSX.Element {
   const { state, dispatch, createCategory, updateCategory, deleteCategory } = useApp()
   const { tasks, categories, tags, filterView, filterCategoryId } = state
+  const { theme, setTheme } = useTheme()
 
   // Category dialog state
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
@@ -378,6 +383,39 @@ export function AppSidebar(): React.JSX.Element {
                 <Minimize2 className="size-4" />
                 <span>简洁模式</span>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton tooltip="切换主题">
+                    {theme === 'dark' ? (
+                      <Moon className="size-4" />
+                    ) : theme === 'light' ? (
+                      <Sun className="size-4" />
+                    ) : (
+                      <Monitor className="size-4" />
+                    )}
+                    <span>主题</span>
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="end">
+                  <DropdownMenuItem onClick={() => setTheme('light')}>
+                    <Sun className="mr-2 size-4" />
+                    亮色
+                    {theme === 'light' && <span className="ml-auto text-xs">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('dark')}>
+                    <Moon className="mr-2 size-4" />
+                    暗色
+                    {theme === 'dark' && <span className="ml-auto text-xs">✓</span>}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTheme('system')}>
+                    <Monitor className="mr-2 size-4" />
+                    跟随系统
+                    {theme === 'system' && <span className="ml-auto text-xs">✓</span>}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>
