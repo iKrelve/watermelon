@@ -26,7 +26,7 @@ export function initDatabase(dbPath: string): BetterSQLite3Database<typeof schem
   // Create tables using raw SQL (drizzle push equivalent)
   createTables(sqliteDb)
 
-  // Run incremental migrations for existing databases
+  // Run versioned migrations
   runMigrations(sqliteDb)
 
   return db
@@ -77,6 +77,11 @@ export function getRawDatabase(): Database.Database | null {
 
 function createTables(sqliteDb: Database.Database): void {
   sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS schema_version (
+      version INTEGER PRIMARY KEY,
+      applied_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL UNIQUE,
@@ -135,25 +140,81 @@ function createTables(sqliteDb: Database.Database): void {
   `)
 }
 
-/**
- * Run incremental migrations for existing databases.
- * Uses ALTER TABLE to add new columns if they don't exist.
- */
-function runMigrations(sqliteDb: Database.Database): void {
-  // Check existing columns in sub_tasks
-  const columns = (sqliteDb.pragma('table_info(sub_tasks)') as { name: string }[]).map(
-    (col) => col.name
-  )
+// ============================================================
+// Versioned Migration System
+// ============================================================
 
-  if (!columns.includes('description')) {
-    sqliteDb.exec('ALTER TABLE sub_tasks ADD COLUMN description TEXT')
+interface Migration {
+  version: number
+  description: string
+  up: (db: Database.Database) => void
+}
+
+/**
+ * Registry of all migrations, ordered by version.
+ * Each migration runs exactly once (tracked via schema_version table).
+ *
+ * To add a new migration:
+ * 1. Append a new entry with `version: N+1`
+ * 2. Provide the `up` function with the SQL to execute
+ */
+const MIGRATIONS: Migration[] = [
+  {
+    version: 1,
+    description: 'Add description, priority, due_date columns to sub_tasks',
+    up: (db) => {
+      const columns = (db.pragma('table_info(sub_tasks)') as { name: string }[]).map(
+        (col) => col.name
+      )
+      if (!columns.includes('description')) {
+        db.exec('ALTER TABLE sub_tasks ADD COLUMN description TEXT')
+      }
+      if (!columns.includes('priority')) {
+        db.exec("ALTER TABLE sub_tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'none'")
+      }
+      if (!columns.includes('due_date')) {
+        db.exec('ALTER TABLE sub_tasks ADD COLUMN due_date TEXT')
+      }
+    },
+  },
+  {
+    version: 2,
+    description: 'Add index on tasks(completed_at) for statistics queries',
+    up: (db) => {
+      db.exec('CREATE INDEX IF NOT EXISTS idx_tasks_completed_at ON tasks(completed_at)')
+    },
+  },
+]
+
+function getCurrentVersion(db: Database.Database): number {
+  try {
+    const row = db
+      .prepare('SELECT MAX(version) as version FROM schema_version')
+      .get() as { version: number | null } | undefined
+    return row?.version ?? 0
+  } catch {
+    // Table might not exist yet for legacy databases
+    return 0
   }
-  if (!columns.includes('priority')) {
-    sqliteDb.exec("ALTER TABLE sub_tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'none'")
-  }
-  if (!columns.includes('due_date')) {
-    sqliteDb.exec('ALTER TABLE sub_tasks ADD COLUMN due_date TEXT')
-  }
+}
+
+function runMigrations(sqliteDb: Database.Database): void {
+  const currentVersion = getCurrentVersion(sqliteDb)
+
+  const pendingMigrations = MIGRATIONS.filter((m) => m.version > currentVersion)
+  if (pendingMigrations.length === 0) return
+
+  // Run all pending migrations in a single transaction
+  const runAll = sqliteDb.transaction(() => {
+    for (const migration of pendingMigrations) {
+      migration.up(sqliteDb)
+      sqliteDb
+        .prepare('INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (?, ?)')
+        .run(migration.version, new Date().toISOString())
+    }
+  })
+
+  runAll()
 }
 
 export { schema }

@@ -10,11 +10,15 @@ import { useApp } from '@/context/AppContext'
  * - Delete:    Delete selected task
  * - Cmd+F:     Focus search
  * - Cmd+\:     Toggle compact mode
+ * - Cmd+K:     Open command palette
  * - Escape:    Deselect task / close search
  * - ArrowUp:   Select previous task in list
  * - ArrowDown: Select next task in list
+ *
+ * Uses `data-shortcut-*` attributes for reliable element targeting
+ * instead of fragile CSS class / placeholder selectors.
  */
-export function useKeyboardShortcuts() {
+export function useKeyboardShortcuts(): void {
   const { state, dispatch, deleteTask, completeTask } = useApp()
 
   const handleKeyDown = useCallback(
@@ -27,9 +31,8 @@ export function useKeyboardShortcuts() {
       // Cmd+N: Focus add task input
       if (isMeta && e.key === 'n') {
         e.preventDefault()
-        // Find and focus the add-task input (identified by placeholder)
         const addTaskInput = document.querySelector<HTMLInputElement>(
-          'input[placeholder="添加新任务，按 Enter 确认"]'
+          '[data-shortcut-target="add-task"]'
         )
         addTaskInput?.focus()
         return
@@ -42,31 +45,27 @@ export function useKeyboardShortcuts() {
         return
       }
 
+      // Cmd+K: Open command palette
+      if (isMeta && e.key === 'k') {
+        e.preventDefault()
+        dispatch({ type: 'TOGGLE_COMMAND_PALETTE' })
+        return
+      }
+
       // Cmd+F: Focus search
       if (isMeta && e.key === 'f') {
         e.preventDefault()
-        // Click the search toggle button if search is not open,
-        // or focus the search input if it already exists
         const searchInput = document.querySelector<HTMLInputElement>(
-          'input[placeholder="搜索任务..."]'
+          '[data-shortcut-target="search"]'
         )
         if (searchInput) {
           searchInput.focus()
         } else {
-          // Click the search button to open it
+          // Click the search toggle button to open it
           const searchBtn = document.querySelector<HTMLButtonElement>(
-            '[data-sidebar="trigger"]'
+            '[data-shortcut-target="search-toggle"]'
           )
-          // Find the search button by looking for the Search icon button in the header
-          const buttons = document.querySelectorAll<HTMLButtonElement>(
-            'button.size-7'
-          )
-          for (const btn of buttons) {
-            if (btn.querySelector('svg')?.classList.contains('lucide-search')) {
-              btn.click()
-              break
-            }
-          }
+          searchBtn?.click()
         }
         return
       }
@@ -118,7 +117,7 @@ export function useKeyboardShortcuts() {
       // Arrow Up/Down: Navigate tasks
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault()
-        const visibleTasks = state.tasks.filter((t) => {
+        const visibleTasks = state.tasks.filter(() => {
           // Simple: use all tasks in current view, actual filtering happens at component level
           // For keyboard nav, we just navigate through the task list order
           return true

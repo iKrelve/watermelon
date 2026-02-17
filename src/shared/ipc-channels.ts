@@ -25,6 +25,7 @@ export const IPC_CHANNELS = {
 
   // Tag operations
   TAG_CREATE: 'tag:create',
+  TAG_UPDATE: 'tag:update',
   TAG_DELETE: 'tag:delete',
   TAG_GET_ALL: 'tag:getAll',
   TASK_TAG_ADD: 'taskTag:add',
@@ -40,6 +41,10 @@ export const IPC_CHANNELS = {
   // Statistics
   STATS_GET: 'stats:get',
   STATS_DAILY_TREND: 'stats:dailyTrend',
+
+  // Data management
+  DATA_EXPORT: 'data:export',
+  DATA_IMPORT: 'data:import',
 
   // Window
   WINDOW_SET_COMPACT_MODE: 'window:setCompactMode',

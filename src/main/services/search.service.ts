@@ -2,31 +2,15 @@ import { eq, and, sql, like, or, inArray, gte, lte, desc, asc } from 'drizzle-or
 import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import * as schema from '../db/schema'
 import { tasks, taskTags } from '../db/schema'
-import type { Task, TaskFilter, RecurrenceRule } from '../../shared/types'
+import type { Task, TaskFilter } from '../../shared/types'
 import { TagService } from './tag.service'
+import { rowToTask } from '../utils/mappers'
 
 export class SearchService {
   constructor(
     private db: BetterSQLite3Database<typeof schema>,
     private tagService: TagService
   ) {}
-
-  private rowToTask(row: typeof tasks.$inferSelect): Task {
-    return {
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      status: row.status as Task['status'],
-      priority: row.priority as Task['priority'],
-      categoryId: row.categoryId,
-      dueDate: row.dueDate,
-      reminderTime: row.reminderTime,
-      recurrenceRule: row.recurrenceRule ? JSON.parse(row.recurrenceRule) : null,
-      completedAt: row.completedAt,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-    }
-  }
 
   /**
    * Search tasks by text query and/or filters.
@@ -102,7 +86,7 @@ export class SearchService {
     }
 
     const rows = (queryBuilder as typeof queryBuilder).orderBy(sortCol).all()
-    let results = rows.map((r) => this.rowToTask(r))
+    let results = rows.map((r) => rowToTask(r))
 
     // Tag filter (post-query filtering since it requires join logic)
     if (filters?.tagIds && filters.tagIds.length > 0) {

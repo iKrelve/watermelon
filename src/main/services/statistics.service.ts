@@ -77,45 +77,63 @@ export class StatisticsService {
 
   /**
    * Get daily completion and creation trends for the past N days.
+   *
+   * Uses two batch SQL queries with GROUP BY instead of 2*N individual queries,
+   * reducing database round-trips from O(N) to O(1).
    */
   getDailyTrend(days: number = 30, referenceDate: Date = new Date()): DailyTrend[] {
-    const trends: DailyTrend[] = []
+    const rangeStart = startOfDay(subDays(referenceDate, days - 1))
+    const rangeEnd = endOfDay(referenceDate)
+    const rangeStartStr = rangeStart.toISOString()
+    const rangeEndStr = rangeEnd.toISOString()
 
+    // Batch query: completed tasks grouped by date
+    const completedRows = this.db
+      .select({
+        date: sql<string>`DATE(${tasks.completedAt})`,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.status, 'completed'),
+          gte(tasks.completedAt, rangeStartStr),
+          lte(tasks.completedAt, rangeEndStr)
+        )
+      )
+      .groupBy(sql`DATE(${tasks.completedAt})`)
+      .all()
+
+    // Batch query: created tasks grouped by date
+    const createdRows = this.db
+      .select({
+        date: sql<string>`DATE(${tasks.createdAt})`,
+        count: sql<number>`COUNT(*)`,
+      })
+      .from(tasks)
+      .where(
+        and(
+          gte(tasks.createdAt, rangeStartStr),
+          lte(tasks.createdAt, rangeEndStr)
+        )
+      )
+      .groupBy(sql`DATE(${tasks.createdAt})`)
+      .all()
+
+    // Build lookup maps for O(1) access
+    const completedByDate = new Map(completedRows.map((r) => [r.date, r.count]))
+    const createdByDate = new Map(createdRows.map((r) => [r.date, r.count]))
+
+    // Generate trend for each day
+    const trends: DailyTrend[] = []
     for (let i = days - 1; i >= 0; i--) {
       const date = subDays(referenceDate, i)
-      const dayStart = startOfDay(date).toISOString()
-      const dayEnd = endOfDay(date).toISOString()
       const dateStr = format(date, 'yyyy-MM-dd')
-
-      // Count tasks completed on this day
-      const completedResult = this.db
-        .select({ count: sql<number>`COUNT(*)` })
-        .from(tasks)
-        .where(
-          and(
-            eq(tasks.status, 'completed'),
-            gte(tasks.completedAt, dayStart),
-            lte(tasks.completedAt, dayEnd)
-          )
-        )
-        .get()
-
-      // Count tasks created on this day
-      const createdResult = this.db
-        .select({ count: sql<number>`COUNT(*)` })
-        .from(tasks)
-        .where(
-          and(
-            gte(tasks.createdAt, dayStart),
-            lte(tasks.createdAt, dayEnd)
-          )
-        )
-        .get()
 
       trends.push({
         date: dateStr,
-        completed: completedResult?.count ?? 0,
-        created: createdResult?.count ?? 0,
+        completed: completedByDate.get(dateStr) ?? 0,
+        created: createdByDate.get(dateStr) ?? 0,
       })
     }
 

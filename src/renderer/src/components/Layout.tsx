@@ -15,6 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { Maximize2 } from 'lucide-react'
+import { CommandPalette } from '@/components/CommandPalette'
 
 /**
  * Three-panel layout: Sidebar | TaskList | TaskDetail
@@ -73,6 +74,8 @@ export function Layout(): React.JSX.Element {
         <div className="flex flex-1 flex-col overflow-hidden">
           <TaskList />
         </div>
+
+        <CommandPalette />
       </div>
     )
   }
@@ -89,6 +92,7 @@ export function Layout(): React.JSX.Element {
             <Statistics />
           </ScrollArea>
         </SidebarInset>
+        <CommandPalette />
       </SidebarProvider>
     )
   }
@@ -117,6 +121,7 @@ export function Layout(): React.JSX.Element {
           </div>
         </div>
       </SidebarInset>
+      <CommandPalette />
     </SidebarProvider>
   )
 }
