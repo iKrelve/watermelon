@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   CommandDialog,
   CommandInput,
@@ -39,6 +40,7 @@ import { toast } from 'sonner'
 import { useTheme } from '@/components/ThemeProvider'
 
 export function CommandPalette(): React.JSX.Element {
+  const { t } = useTranslation()
   const commandPaletteOpen = useUIStore((s) => s.commandPaletteOpen)
   const setCommandPalette = useUIStore((s) => s.setCommandPalette)
   const setFilterView = useUIStore((s) => s.setFilterView)
@@ -133,9 +135,9 @@ export function CommandPalette(): React.JSX.Element {
       a.download = `watermelon-export-${new Date().toISOString().split('T')[0]}.json`
       a.click()
       URL.revokeObjectURL(url)
-      toast.success('数据导出成功')
+      toast.success(t('command.exportSuccess'))
     } catch {
-      toast.error('数据导出失败')
+      toast.error(t('command.exportError'))
     }
   }, [setOpen, exportDataMut])
 
@@ -151,7 +153,7 @@ export function CommandPalette(): React.JSX.Element {
         const text = await file.text()
         await importDataMut.mutateAsync(text)
       } catch {
-        toast.error('数据导入失败')
+        toast.error(t('command.importError'))
       }
     }
     input.click()
@@ -186,35 +188,35 @@ export function CommandPalette(): React.JSX.Element {
     <CommandDialog
       open={open}
       onOpenChange={setOpen}
-      title="命令面板"
-      description="搜索命令、导航视图或执行操作"
+      title={t('command.title')}
+      description={t('command.description')}
       showCloseButton={false}
     >
-      <CommandInput placeholder="输入命令或搜索..." />
+      <CommandInput placeholder={t('command.placeholder')} />
       <CommandList>
-        <CommandEmpty>没有匹配的命令</CommandEmpty>
+        <CommandEmpty>{t('command.noMatches')}</CommandEmpty>
 
         {/* Navigation */}
-        <CommandGroup heading="导航">
+        <CommandGroup heading={t('command.navGroup')}>
           <CommandItem onSelect={() => handleNavigate('all')}>
             <ListTodo className="size-4" />
-            <span>全部任务</span>
+            <span>{t('command.allTasks')}</span>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate('today')}>
             <CalendarDays className="size-4" />
-            <span>今天</span>
+            <span>{t('command.today')}</span>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate('upcoming')}>
             <CalendarRange className="size-4" />
-            <span>即将到来</span>
+            <span>{t('command.upcoming')}</span>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate('completed')}>
             <CheckCircle2 className="size-4" />
-            <span>已完成</span>
+            <span>{t('command.completed')}</span>
           </CommandItem>
           <CommandItem onSelect={() => handleNavigate('stats')}>
             <BarChart3 className="size-4" />
-            <span>统计</span>
+            <span>{t('command.statistics')}</span>
           </CommandItem>
         </CommandGroup>
 
@@ -222,7 +224,7 @@ export function CommandPalette(): React.JSX.Element {
         {categories.length > 0 && (
           <>
             <CommandSeparator />
-            <CommandGroup heading="分类">
+            <CommandGroup heading={t('command.categoriesGroup')}>
               {categories.map((cat) => (
                 <CommandItem key={cat.id} onSelect={() => handleCategorySelect(cat.id)}>
                   <div
@@ -240,7 +242,7 @@ export function CommandPalette(): React.JSX.Element {
         {tags.length > 0 && (
           <>
             <CommandSeparator />
-            <CommandGroup heading="标签">
+            <CommandGroup heading={t('command.tagsGroup')}>
               {tags.map((tag) => (
                 <CommandItem key={tag.id} onSelect={() => handleTagSelect(tag.id)}>
                   <div
@@ -257,23 +259,23 @@ export function CommandPalette(): React.JSX.Element {
         <CommandSeparator />
 
         {/* Actions */}
-        <CommandGroup heading="操作">
+        <CommandGroup heading={t('command.actionsGroup')}>
           <CommandItem onSelect={handleNewTask}>
             <Plus className="size-4" />
-            <span>新建任务</span>
+            <span>{t('command.newTask')}</span>
             <CommandShortcut>⌘N</CommandShortcut>
           </CommandItem>
           {selectedTask && selectedTask.status === 'todo' && (
             <CommandItem onSelect={handleCompleteSelected}>
               <CheckCircle2 className="size-4" />
-              <span>完成选中任务</span>
+              <span>{t('command.completeTask')}</span>
               <CommandShortcut>Enter</CommandShortcut>
             </CommandItem>
           )}
           {selectedTask && (
             <CommandItem onSelect={handleDeleteSelected}>
               <Trash2 className="size-4" />
-              <span>删除选中任务</span>
+              <span>{t('command.deleteTask')}</span>
               <CommandShortcut>⌘D</CommandShortcut>
             </CommandItem>
           )}
@@ -284,7 +286,7 @@ export function CommandPalette(): React.JSX.Element {
             searchBtn?.click()
           })}>
             <Search className="size-4" />
-            <span>搜索任务</span>
+            <span>{t('command.searchTask')}</span>
             <CommandShortcut>⌘F</CommandShortcut>
           </CommandItem>
         </CommandGroup>
@@ -292,43 +294,43 @@ export function CommandPalette(): React.JSX.Element {
         <CommandSeparator />
 
         {/* Data & Window */}
-        <CommandGroup heading="窗口 & 数据">
+        <CommandGroup heading={t('command.windowDataGroup')}>
           <CommandItem onSelect={handleCompactToggle}>
             {compactMode ? (
               <Maximize2 className="size-4" />
             ) : (
               <Minimize2 className="size-4" />
             )}
-            <span>{compactMode ? '退出简洁模式' : '简洁模式'}</span>
+            <span>{compactMode ? t('command.exitCompactMode') : t('command.compactMode')}</span>
             <CommandShortcut>⌘\</CommandShortcut>
           </CommandItem>
           <CommandItem onSelect={handleExport}>
             <Download className="size-4" />
-            <span>导出数据</span>
+            <span>{t('command.exportData')}</span>
           </CommandItem>
           <CommandItem onSelect={handleImport}>
             <Upload className="size-4" />
-            <span>导入数据</span>
+            <span>{t('command.importData')}</span>
           </CommandItem>
         </CommandGroup>
 
         <CommandSeparator />
 
         {/* Theme */}
-        <CommandGroup heading="主题">
+        <CommandGroup heading={t('command.themeGroup')}>
           <CommandItem onSelect={() => runAndClose(() => setTheme('light'))}>
             <Sun className="size-4" />
-            <span>亮色模式</span>
+            <span>{t('command.lightMode')}</span>
             {theme === 'light' && <CommandShortcut>✓</CommandShortcut>}
           </CommandItem>
           <CommandItem onSelect={() => runAndClose(() => setTheme('dark'))}>
             <Moon className="size-4" />
-            <span>暗色模式</span>
+            <span>{t('command.darkMode')}</span>
             {theme === 'dark' && <CommandShortcut>✓</CommandShortcut>}
           </CommandItem>
           <CommandItem onSelect={() => runAndClose(() => setTheme('system'))}>
             <Sun className="size-4" />
-            <span>跟随系统</span>
+            <span>{t('command.systemMode')}</span>
             {theme === 'system' && <CommandShortcut>✓</CommandShortcut>}
           </CommandItem>
         </CommandGroup>

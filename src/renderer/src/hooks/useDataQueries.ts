@@ -6,6 +6,7 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import i18n from '@/i18n'
 import type {
   Task,
   Category,
@@ -31,7 +32,7 @@ import type {
 function unwrap<T>(result: T | { __error: AppError }): T {
   if (result && typeof result === 'object' && '__error' in result) {
     const error = (result as { __error: AppError }).__error
-    toast.error(error.message || '操作失败')
+    toast.error(error.message || i18n.t('error.operationFailed'))
     throw error
   }
   return result as T
@@ -412,7 +413,7 @@ export function useImportData(): UseMutationResult<void, Error, string> {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
       queryClient.invalidateQueries({ queryKey: queryKeys.categories })
       queryClient.invalidateQueries({ queryKey: queryKeys.tags })
-      toast.success('数据导入成功')
+      toast.success(i18n.t('toast.importSuccess'))
     },
   })
 }

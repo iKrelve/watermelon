@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import i18n from '@/i18n'
 
 // ============================================================
 // UI Store — lightweight UI state managed by Zustand
@@ -24,6 +25,7 @@ interface UIState {
   searchQuery: string
   compactMode: boolean
   commandPaletteOpen: boolean
+  language: string
 }
 
 interface UIActions {
@@ -35,6 +37,7 @@ interface UIActions {
   toggleCompactMode: () => void
   toggleCommandPalette: () => void
   setCommandPalette: (open: boolean) => void
+  setLanguage: (lang: string) => void
 }
 
 export type UIStore = UIState & UIActions
@@ -50,6 +53,7 @@ export const useUIStore = create<UIStore>()(
       searchQuery: '',
       compactMode: false,
       commandPaletteOpen: false,
+      language: 'zh-CN',
 
       // Actions
       selectTask: (id) => set({ selectedTaskId: id }),
@@ -79,12 +83,24 @@ export const useUIStore = create<UIStore>()(
         set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),
 
       setCommandPalette: (open) => set({ commandPaletteOpen: open }),
+
+      setLanguage: (lang) => {
+        i18n.changeLanguage(lang)
+        set({ language: lang })
+      },
     }),
     {
       name: 'watermelon:ui',
       partialize: (state) => ({
         compactMode: state.compactMode,
+        language: state.language,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Sync i18n language from persisted state on app start
+        if (state?.language) {
+          i18n.changeLanguage(state.language)
+        }
+      },
     }
   )
 )

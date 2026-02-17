@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 import { TaskList } from '@/components/task-list'
@@ -35,6 +36,7 @@ import { CommandPalette } from '@/components/CommandPalette'
  * top of each panel so the user can still drag the window.
  */
 export function Layout(): React.JSX.Element {
+  const { t } = useTranslation()
   const filterView = useUIStore((s) => s.filterView)
   const compactMode = useUIStore((s) => s.compactMode)
   const toggleCompactMode = useUIStore((s) => s.toggleCompactMode)
@@ -67,12 +69,12 @@ export function Layout(): React.JSX.Element {
                     size="icon"
                     className="size-7 text-muted-foreground hover:text-foreground"
                     onClick={exitCompactMode}
-                    aria-label="退出简洁模式"
+                    aria-label={t('layout.exitCompactMode')}
                   >
                     <Maximize2 className="size-3.5" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">退出简洁模式 (⌘\)</TooltipContent>
+                <TooltipContent side="bottom">{t('layout.exitCompactModeTooltip')}</TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>

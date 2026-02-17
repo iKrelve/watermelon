@@ -3,11 +3,12 @@ import type { Task } from '../../../../../shared/types'
 
 export type SortOption = 'default' | 'dueDate' | 'priority' | 'createdAt'
 
-export const SORT_LABELS: Record<SortOption, string> = {
-  default: '默认',
-  dueDate: '按截止日期',
-  priority: '按优先级',
-  createdAt: '按创建时间',
+// Keys for i18n lookup
+export const SORT_OPTION_KEYS: Record<SortOption, string> = {
+  default: 'sort.default',
+  dueDate: 'sort.byDueDate',
+  priority: 'sort.byPriority',
+  createdAt: 'sort.byCreatedAt',
 }
 
 export function applySortOption(tasks: Task[], sortOption: SortOption): Task[] {

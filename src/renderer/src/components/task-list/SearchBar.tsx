@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/stores/ui-store'
@@ -6,6 +7,7 @@ import { Search, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function SearchBar(): React.JSX.Element {
+  const { t } = useTranslation()
   const searchQuery = useUIStore((s) => s.searchQuery)
   const setSearchQuery = useUIStore((s) => s.setSearchQuery)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -35,13 +37,13 @@ export function SearchBar(): React.JSX.Element {
             ref={inputRef}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索任务..."
+            placeholder={t('search.placeholder')}
             data-shortcut-target="search"
             className="h-7 pl-7 pr-7 text-xs border-muted rounded-md"
           />
           {searchQuery && (
             <button
-              aria-label="清除搜索"
+              aria-label={t('search.clear')}
               onClick={() => setSearchQuery('')}
               className="absolute right-2 top-1/2 -translate-y-1/2"
             >
@@ -56,7 +58,7 @@ export function SearchBar(): React.JSX.Element {
         className="size-7 shrink-0"
         onClick={toggleSearch}
         data-shortcut-target="search-toggle"
-        aria-label={isSearchOpen ? '关闭搜索' : '搜索'}
+        aria-label={isSearchOpen ? t('search.close') : t('search.open')}
       >
         {isSearchOpen ? (
           <X className="size-3.5" />

@@ -1,4 +1,7 @@
+import type { TFunction } from 'i18next'
+
 export function getFilterTitle(
+  t: TFunction,
   filterView: string,
   categories: { id: string; name: string }[],
   filterCategoryId: string | null,
@@ -7,25 +10,25 @@ export function getFilterTitle(
 ): string {
   switch (filterView) {
     case 'all':
-      return '全部'
+      return t('filter.all')
     case 'today':
-      return '今天'
+      return t('filter.today')
     case 'upcoming':
-      return '即将到来'
+      return t('filter.upcoming')
     case 'completed':
-      return '已完成'
+      return t('filter.completed')
     case 'category': {
       const cat = categories.find((c) => c.id === filterCategoryId)
-      return cat?.name ?? '分类'
+      return cat?.name ?? t('filter.categoryFallback')
     }
     case 'tag': {
       if (filterTagIds.length === 1) {
         const tag = tags.find((t) => t.id === filterTagIds[0])
-        return tag?.name ?? '标签'
+        return tag?.name ?? t('filter.tagFallback')
       }
-      return `标签 (${filterTagIds.length})`
+      return t('filter.tagMultiple', { count: filterTagIds.length })
     }
     default:
-      return '任务'
+      return t('filter.default')
   }
 }

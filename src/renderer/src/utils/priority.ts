@@ -1,4 +1,5 @@
 import type { Priority, Task } from '../../../shared/types'
+import i18n from '@/i18n'
 
 const PRIORITY_RANK: Record<Priority, number> = {
   high: 0,
@@ -49,14 +50,14 @@ export function getPriorityColor(priority: Priority): string {
 export function getPriorityLabel(priority: Priority): string {
   switch (priority) {
     case 'high':
-      return '高'
+      return i18n.t('priority.high')
     case 'medium':
-      return '中'
+      return i18n.t('priority.medium')
     case 'low':
-      return '低'
+      return i18n.t('priority.low')
     case 'none':
     default:
-      return '无'
+      return i18n.t('priority.none')
   }
 }
 

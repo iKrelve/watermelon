@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ export function CategoryDialog({
   initialColor = null,
   isEditing = false,
 }: CategoryDialogProps) {
+  const { t } = useTranslation()
   const [name, setName] = useState(initialName)
   const [color, setColor] = useState<string | null>(initialColor)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -68,9 +70,9 @@ export function CategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[380px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? '编辑分类' : '新建分类'}</DialogTitle>
+          <DialogTitle>{isEditing ? t('categoryDialog.editTitle') : t('categoryDialog.createTitle')}</DialogTitle>
           <DialogDescription>
-            {isEditing ? '修改分类名称或颜色' : '输入分类名称并选择颜色'}
+            {isEditing ? t('categoryDialog.editDescription') : t('categoryDialog.createDescription')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -78,11 +80,11 @@ export function CategoryDialog({
             {/* Name Input */}
             <div className="space-y-2">
               <label htmlFor="category-name" className="text-sm font-medium">
-                名称
+                {t('categoryDialog.nameLabel')}
               </label>
               <Input
                 id="category-name"
-                placeholder="分类名称"
+                placeholder={t('categoryDialog.namePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
@@ -91,7 +93,7 @@ export function CategoryDialog({
 
             {/* Color Picker */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">颜色</label>
+              <label className="text-sm font-medium">{t('categoryDialog.colorLabel')}</label>
               <div className="flex flex-wrap gap-2">
                 {PRESET_COLORS.map((c) => (
                   <button
@@ -104,7 +106,7 @@ export function CategoryDialog({
                         : ''
                     }`}
                     style={{ backgroundColor: c }}
-                    aria-label={`颜色 ${c}`}
+                    aria-label={`${t('categoryDialog.colorLabel')} ${c}`}
                   />
                 ))}
               </div>
@@ -117,13 +119,13 @@ export function CategoryDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              取消
+              {t('categoryDialog.cancel')}
             </Button>
             <Button
               type="submit"
               disabled={!name.trim() || isSubmitting}
             >
-              {isSubmitting ? '保存中...' : isEditing ? '保存' : '创建'}
+              {isSubmitting ? t('categoryDialog.saving') : isEditing ? t('categoryDialog.save') : t('categoryDialog.create')}
             </Button>
           </DialogFooter>
         </form>
