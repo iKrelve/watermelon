@@ -14,12 +14,15 @@ Watermelon (小西瓜) 是一款面向 macOS 的极简 Todo 管理桌面应用�
 - **CSS**: Tailwind CSS v4 (`@tailwindcss/vite` plugin, CSS-first config)
 - **Component Library**: shadcn/ui (new-york style, Radix UI primitives)
 - **Icons**: lucide-react
+- **State Management**: Zustand 5 (UI state) + @tanstack/react-query 5 (server/async state)
 - **Database**: better-sqlite3 + Drizzle ORM (SQLite, WAL mode)
+- **Resizable Panels**: react-resizable-panels v4 (⚠️ breaking API changes from v3, see below)
+- **Drag & Drop**: @dnd-kit/core + @dnd-kit/sortable (task reordering)
 - **Date Utilities**: date-fns
 - **Charts**: recharts (Statistics view)
 - **Testing**: Vitest + fast-check (property-based testing)
 - **Linting**: ESLint 9 (flat config) + Prettier
-- **Other**: uuid, sonner (toast), cmdk (command palette), react-day-picker
+- **Other**: uuid, sonner (toast), cmdk (command palette), react-day-picker, next-themes
 
 ## Project Structure
 
@@ -53,11 +56,13 @@ watermelon/
 │   │   │   ├── category.service.ts   # Category CRUD
 │   │   │   ├── tag.service.ts        # Tag CRUD, task-tag associations
 │   │   │   ├── search.service.ts     # Text search + filter (LIKE + AND conditions)
+│   │   │   ├── data.service.ts       # Data import/export service
 │   │   │   ├── notification.service.ts # macOS native notifications, scheduling
 │   │   │   ├── statistics.service.ts # Stats summary & daily trend queries
 │   │   │   └── __tests__/            # Service unit tests
 │   │   └── utils/
 │   │       ├── recurrence.ts     # Recurrence rule calculation (daily/weekly/monthly/custom)
+│   │       ├── mappers.ts        # Data mapping/transformation utilities
 │   │       └── __tests__/        # Recurrence tests
 │   ├── preload/                  # Preload scripts (contextBridge)
 │   │   ├── index.ts              # Exposes typed `window.api` to renderer
@@ -73,17 +78,23 @@ watermelon/
 │           │   └── utils.ts      # cn() utility (clsx + tailwind-merge)
 │           ├── context/
 │           │   └── AppContext.tsx # Global state (useReducer) + all async action creators
+│           ├── stores/
+│           │   └── ui-store.ts       # Zustand UI state (filterView, selectedTask, compactMode, etc.)
 │           ├── components/
 │           │   ├── Layout.tsx        # Three-panel layout (Sidebar | TaskList | Detail)
 │           │   ├── AppSidebar.tsx    # Sidebar navigation (views, categories, tags)
-│           │   ├── TaskList.tsx      # Task list with search, sort, add, filter
+│           │   ├── TaskList.tsx      # Task list with search, sort, add, filter, drag-and-drop
 │           │   ├── TaskDetail.tsx    # Task detail panel (edit title/desc, sub-tasks, tags, etc.)
 │           │   ├── Statistics.tsx    # Stats dashboard (area chart, summary cards)
+│           │   ├── CalendarView.tsx  # Calendar view for tasks
 │           │   ├── CategoryDialog.tsx # Create/edit category dialog with color picker
+│           │   ├── CommandPalette.tsx # Cmd+K command palette (cmdk)
+│           │   ├── ThemeProvider.tsx # Theme provider (next-themes, light/dark mode)
 │           │   ├── ErrorBoundary.tsx # React error boundary with retry UI
 │           │   └── ui/              # shadcn/ui generated components
 │           ├── hooks/
 │           │   ├── useKeyboardShortcuts.ts  # Global keyboard shortcuts (Cmd+N, Cmd+F, etc.)
+│           │   ├── useDataQueries.ts        # React Query hooks for all CRUD operations
 │           │   └── use-mobile.ts            # Mobile detection hook (shadcn)
 │           └── utils/
 │               ├── date-filters.ts  # Task date filtering (isOverdue, isUpcoming, filterToday)
@@ -160,10 +171,20 @@ Components are generated into `src/renderer/src/components/ui/` with `@/` import
 
 ### State Management
 
-- Global state lives in `src/renderer/src/context/AppContext.tsx`
-- Uses `useReducer` with typed actions (`AppAction`) for predictable state updates
-- All async operations (CRUD, search, stats) are exposed as `useCallback`-wrapped functions via context
-- `useApp()` custom hook for consuming context throughout the app
+- **UI state**: Zustand store in `src/renderer/src/stores/ui-store.ts` — manages filterView, selectedTask, compactMode, searchQuery, theme, etc.
+- **Server/async state**: @tanstack/react-query hooks in `src/renderer/src/hooks/useDataQueries.ts` — all CRUD operations (tasks, categories, tags, sub-tasks) with automatic cache invalidation
+- **Legacy context**: `src/renderer/src/context/AppContext.tsx` (useReducer) — being migrated to the above stores
+- Access UI state via `useUIStore()` selector hooks; access data via `useTasksQuery()`, `useCreateTask()`, etc.
+
+### react-resizable-panels v4
+
+⚠️ **Breaking changes from v3** — the installed version is v4, which has a significantly different API:
+
+- **Component names**: `Group` (was `PanelGroup`), `Panel`, `Separator` (was `PanelGroupHandle`). shadcn wraps these as `ResizablePanelGroup`, `ResizablePanel`, `ResizableHandle`.
+- **Orientation**: Use `orientation="horizontal"` (v3 used `direction="horizontal"`)
+- **Size values**: Numeric values = **pixels**, string values = **percentages**. Use `defaultSize="35%"` not `defaultSize={35}` (which would be 35px!)
+- **No `autoSaveId`**: Persistence must be done manually via `useDefaultLayout` hook + `defaultLayout`/`onLayoutChanged` props
+- **Panel `id` recommended**: Always provide `id` prop on panels for stable identification
 
 ### Coding Style
 
