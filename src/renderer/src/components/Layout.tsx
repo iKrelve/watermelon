@@ -134,9 +134,8 @@ export function Layout(): React.JSX.Element {
           <div className="drag-region h-[38px] shrink-0" />
 
           <ResizablePanelGroup
-            direction="horizontal"
+            orientation="horizontal"
             className="flex-1"
-            autoSaveId="watermelon-layout"
           >
             {/* Middle Panel - Task List */}
             <ResizablePanel
