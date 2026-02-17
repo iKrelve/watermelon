@@ -9,16 +9,22 @@ import {
   CommandShortcut,
   CommandSeparator,
 } from '@/components/ui/command'
-import { useApp } from '@/context/AppContext'
-import type { FilterView } from '@/context/AppContext'
+import { useUIStore, type FilterView } from '@/stores/ui-store'
+import {
+  useTasksQuery,
+  useCategoriesQuery,
+  useTagsQuery,
+  useDeleteTask,
+  useCompleteTask,
+  useExportData,
+  useImportData,
+} from '@/hooks/useDataQueries'
 import {
   ListTodo,
   CalendarDays,
   CalendarRange,
   CheckCircle2,
   BarChart3,
-  FolderOpen,
-  Tag,
   Plus,
   Minimize2,
   Maximize2,
@@ -33,15 +39,32 @@ import { toast } from 'sonner'
 import { useTheme } from '@/components/ThemeProvider'
 
 export function CommandPalette(): React.JSX.Element {
-  const { state, dispatch, createTask, deleteTask, completeTask, exportData, importData } = useApp()
+  const commandPaletteOpen = useUIStore((s) => s.commandPaletteOpen)
+  const setCommandPalette = useUIStore((s) => s.setCommandPalette)
+  const setFilterView = useUIStore((s) => s.setFilterView)
+  const setFilterCategory = useUIStore((s) => s.setFilterCategory)
+  const setFilterTags = useUIStore((s) => s.setFilterTags)
+  const toggleCompactMode = useUIStore((s) => s.toggleCompactMode)
+  const compactMode = useUIStore((s) => s.compactMode)
+  const selectedTaskId = useUIStore((s) => s.selectedTaskId)
+
+  const { data: tasks = [] } = useTasksQuery()
+  const { data: categories = [] } = useCategoriesQuery()
+  const { data: tags = [] } = useTagsQuery()
+
+  const deleteTaskMut = useDeleteTask()
+  const completeTaskMut = useCompleteTask()
+  const exportDataMut = useExportData()
+  const importDataMut = useImportData()
+
   const { theme, setTheme } = useTheme()
-  const open = state.commandPaletteOpen
+  const open = commandPaletteOpen
 
   const setOpen = useCallback(
     (value: boolean): void => {
-      dispatch({ type: 'SET_COMMAND_PALETTE', payload: value })
+      setCommandPalette(value)
     },
-    [dispatch]
+    [setCommandPalette]
   )
 
   const runAndClose = useCallback(
@@ -55,30 +78,30 @@ export function CommandPalette(): React.JSX.Element {
   const handleNavigate = useCallback(
     (view: FilterView): void => {
       runAndClose(() => {
-        dispatch({ type: 'SET_FILTER_VIEW', payload: view })
-        dispatch({ type: 'SET_FILTER_CATEGORY', payload: null })
+        setFilterView(view)
+        setFilterCategory(null)
       })
     },
-    [dispatch, runAndClose]
+    [setFilterView, setFilterCategory, runAndClose]
   )
 
   const handleCategorySelect = useCallback(
     (categoryId: string): void => {
       runAndClose(() => {
-        dispatch({ type: 'SET_FILTER_CATEGORY', payload: categoryId })
+        setFilterCategory(categoryId)
       })
     },
-    [dispatch, runAndClose]
+    [setFilterCategory, runAndClose]
   )
 
   const handleTagSelect = useCallback(
     (tagId: string): void => {
       runAndClose(() => {
-        dispatch({ type: 'SET_FILTER_TAGS', payload: [tagId] })
-        dispatch({ type: 'SET_FILTER_VIEW', payload: 'tag' })
+        setFilterTags([tagId])
+        setFilterView('tag')
       })
     },
-    [dispatch, runAndClose]
+    [setFilterTags, setFilterView, runAndClose]
   )
 
   const handleNewTask = useCallback((): void => {
@@ -94,14 +117,14 @@ export function CommandPalette(): React.JSX.Element {
 
   const handleCompactToggle = useCallback((): void => {
     runAndClose(() => {
-      dispatch({ type: 'TOGGLE_COMPACT_MODE' })
+      toggleCompactMode()
     })
-  }, [dispatch, runAndClose])
+  }, [toggleCompactMode, runAndClose])
 
   const handleExport = useCallback(async (): Promise<void> => {
     setOpen(false)
     try {
-      const json = await exportData()
+      const json = await exportDataMut.mutateAsync()
       // Create a download by creating a blob URL
       const blob = new Blob([json], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -114,7 +137,7 @@ export function CommandPalette(): React.JSX.Element {
     } catch {
       toast.error('数据导出失败')
     }
-  }, [setOpen, exportData])
+  }, [setOpen, exportDataMut])
 
   const handleImport = useCallback((): void => {
     setOpen(false)
@@ -126,38 +149,38 @@ export function CommandPalette(): React.JSX.Element {
       if (!file) return
       try {
         const text = await file.text()
-        await importData(text)
+        await importDataMut.mutateAsync(text)
       } catch {
         toast.error('数据导入失败')
       }
     }
     input.click()
-  }, [setOpen, importData])
+  }, [setOpen, importDataMut])
 
   const selectedTask = useMemo(() => {
-    if (!state.selectedTaskId) return null
-    return state.tasks.find((t) => t.id === state.selectedTaskId) ?? null
-  }, [state.selectedTaskId, state.tasks])
+    if (!selectedTaskId) return null
+    return tasks.find((t) => t.id === selectedTaskId) ?? null
+  }, [selectedTaskId, tasks])
 
   const handleCompleteSelected = useCallback(async (): Promise<void> => {
     if (!selectedTask || selectedTask.status !== 'todo') return
     setOpen(false)
     try {
-      await completeTask(selectedTask.id)
+      await completeTaskMut.mutateAsync(selectedTask.id)
     } catch {
       // handled globally
     }
-  }, [selectedTask, completeTask, setOpen])
+  }, [selectedTask, completeTaskMut, setOpen])
 
   const handleDeleteSelected = useCallback(async (): Promise<void> => {
     if (!selectedTask) return
     setOpen(false)
     try {
-      await deleteTask(selectedTask.id)
+      await deleteTaskMut.mutateAsync(selectedTask.id)
     } catch {
       // handled globally
     }
-  }, [selectedTask, deleteTask, setOpen])
+  }, [selectedTask, deleteTaskMut, setOpen])
 
   return (
     <CommandDialog
@@ -196,11 +219,11 @@ export function CommandPalette(): React.JSX.Element {
         </CommandGroup>
 
         {/* Categories */}
-        {state.categories.length > 0 && (
+        {categories.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading="分类">
-              {state.categories.map((cat) => (
+              {categories.map((cat) => (
                 <CommandItem key={cat.id} onSelect={() => handleCategorySelect(cat.id)}>
                   <div
                     className="size-3 rounded-full shrink-0"
@@ -214,11 +237,11 @@ export function CommandPalette(): React.JSX.Element {
         )}
 
         {/* Tags */}
-        {state.tags.length > 0 && (
+        {tags.length > 0 && (
           <>
             <CommandSeparator />
             <CommandGroup heading="标签">
-              {state.tags.map((tag) => (
+              {tags.map((tag) => (
                 <CommandItem key={tag.id} onSelect={() => handleTagSelect(tag.id)}>
                   <div
                     className="size-2.5 rounded-full shrink-0"
@@ -271,12 +294,12 @@ export function CommandPalette(): React.JSX.Element {
         {/* Data & Window */}
         <CommandGroup heading="窗口 & 数据">
           <CommandItem onSelect={handleCompactToggle}>
-            {state.compactMode ? (
+            {compactMode ? (
               <Maximize2 className="size-4" />
             ) : (
               <Minimize2 className="size-4" />
             )}
-            <span>{state.compactMode ? '退出简洁模式' : '简洁模式'}</span>
+            <span>{compactMode ? '退出简洁模式' : '简洁模式'}</span>
             <CommandShortcut>⌘\</CommandShortcut>
           </CommandItem>
           <CommandItem onSelect={handleExport}>

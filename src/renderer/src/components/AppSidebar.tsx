@@ -25,7 +25,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useApp, type FilterView } from '@/context/AppContext'
+import { useUIStore, type FilterView } from '@/stores/ui-store'
+import {
+  useTasksQuery,
+  useCategoriesQuery,
+  useTagsQuery,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+} from '@/hooks/useDataQueries'
 import { useTheme } from '@/components/ThemeProvider'
 import { filterToday, filterUpcoming } from '@/utils/date-filters'
 import { CategoryDialog } from '@/components/CategoryDialog'
@@ -34,6 +42,7 @@ import {
   ListTodo,
   CalendarDays,
   CalendarRange,
+  CalendarCheck,
   CheckCircle2,
   BarChart3,
   FolderOpen,
@@ -53,7 +62,7 @@ interface SmartFilterItem {
   id: FilterView
   label: string
   icon: React.ReactNode
-  getBadge?: (tasks: ReturnType<typeof useApp>['state']['tasks']) => number
+  getBadge?: (tasks: import('../../../shared/types').Task[]) => number
 }
 
 const smartFilters: SmartFilterItem[] = [
@@ -81,11 +90,30 @@ const smartFilters: SmartFilterItem[] = [
     icon: <CheckCircle2 className="size-4" />,
     getBadge: (tasks) => tasks.filter((t) => t.status === 'completed').length,
   },
+  {
+    id: 'calendar',
+    label: '日历',
+    icon: <CalendarCheck className="size-4" />,
+  },
 ]
 
 export function AppSidebar(): React.JSX.Element {
-  const { state, dispatch, createCategory, updateCategory, deleteCategory } = useApp()
-  const { tasks, categories, tags, filterView, filterCategoryId } = state
+  const filterView = useUIStore((s) => s.filterView)
+  const filterCategoryId = useUIStore((s) => s.filterCategoryId)
+  const filterTagIds = useUIStore((s) => s.filterTagIds)
+  const setFilterView = useUIStore((s) => s.setFilterView)
+  const setFilterCategory = useUIStore((s) => s.setFilterCategory)
+  const setFilterTags = useUIStore((s) => s.setFilterTags)
+  const toggleCompactMode = useUIStore((s) => s.toggleCompactMode)
+
+  const { data: tasks = [] } = useTasksQuery()
+  const { data: categories = [] } = useCategoriesQuery()
+  const { data: tags = [] } = useTagsQuery()
+
+  const createCategoryMut = useCreateCategory()
+  const updateCategoryMut = useUpdateCategory()
+  const deleteCategoryMut = useDeleteCategory()
+
   const { theme, setTheme } = useTheme()
 
   // Category dialog state
@@ -96,23 +124,23 @@ export function AppSidebar(): React.JSX.Element {
     color: string | null
   } | null>(null)
 
-  const handleFilterClick = (view: FilterView) => {
-    dispatch({ type: 'SET_FILTER_VIEW', payload: view })
-    dispatch({ type: 'SET_FILTER_CATEGORY', payload: null })
+  const handleFilterClick = (view: FilterView): void => {
+    setFilterView(view)
+    setFilterCategory(null)
   }
 
-  const handleCategoryClick = (categoryId: string) => {
-    dispatch({ type: 'SET_FILTER_CATEGORY', payload: categoryId })
+  const handleCategoryClick = (categoryId: string): void => {
+    setFilterCategory(categoryId)
   }
 
-  const handleTagClick = (tagId: string) => {
-    const current = state.filterTagIds
+  const handleTagClick = (tagId: string): void => {
+    const current = filterTagIds
     const updated = current.includes(tagId)
       ? current.filter((id) => id !== tagId)
       : [...current, tagId]
-    dispatch({ type: 'SET_FILTER_TAGS', payload: updated })
-    if (state.filterView !== 'tag') {
-      dispatch({ type: 'SET_FILTER_VIEW', payload: 'tag' })
+    setFilterTags(updated)
+    if (filterView !== 'tag') {
+      setFilterView('tag')
     }
   }
 
@@ -126,20 +154,23 @@ export function AppSidebar(): React.JSX.Element {
     setCategoryDialogOpen(true)
   }
 
-  const handleDeleteCategory = async (id: string) => {
+  const handleDeleteCategory = async (id: string): Promise<void> => {
     try {
-      await deleteCategory(id)
+      await deleteCategoryMut.mutateAsync(id)
     } catch {
       // Error will be handled by the global error handler later
     }
   }
 
-  const handleCategoryDialogSubmit = async (name: string, color: string | null) => {
+  const handleCategoryDialogSubmit = async (name: string, color: string | null): Promise<void> => {
     try {
       if (editingCategory) {
-        await updateCategory(editingCategory.id, { name, color: color ?? undefined })
+        await updateCategoryMut.mutateAsync({
+          id: editingCategory.id,
+          data: { name, color: color ?? undefined },
+        })
       } else {
-        await createCategory({ name, color: color ?? undefined })
+        await createCategoryMut.mutateAsync({ name, color: color ?? undefined })
       }
       setCategoryDialogOpen(false)
       setEditingCategory(null)
@@ -148,7 +179,7 @@ export function AppSidebar(): React.JSX.Element {
     }
   }
 
-  const getTaskCountForCategory = (categoryId: string) => {
+  const getTaskCountForCategory = (categoryId: string): number => {
     return tasks.filter((t) => t.categoryId === categoryId && t.status === 'todo').length
   }
 
@@ -335,7 +366,7 @@ export function AppSidebar(): React.JSX.Element {
                       </SidebarMenuItem>
                     ) : (
                       tags.map((tag) => {
-                        const isActive = state.filterTagIds.includes(tag.id)
+                        const isActive = filterTagIds.includes(tag.id)
                         return (
                           <SidebarMenuItem key={tag.id}>
                             <SidebarMenuButton
@@ -377,7 +408,7 @@ export function AppSidebar(): React.JSX.Element {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={() => dispatch({ type: 'TOGGLE_COMPACT_MODE' })}
+                onClick={() => toggleCompactMode()}
                 tooltip="简洁模式 (⌘\)"
               >
                 <Minimize2 className="size-4" />

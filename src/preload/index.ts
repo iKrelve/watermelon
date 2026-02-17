@@ -9,6 +9,7 @@ import type {
   CreateCategoryInput,
   UpdateCategoryInput,
   TaskFilter,
+  ReorderTaskItem,
 } from '../shared/types'
 
 // Custom API exposed to renderer
@@ -21,6 +22,8 @@ const api = {
   getTasks: (filter?: TaskFilter) => ipcRenderer.invoke(IPC_CHANNELS.TASK_GET_ALL, filter),
   getTaskById: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.TASK_GET_BY_ID, id),
   completeTask: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.TASK_COMPLETE, id),
+  reorderTasks: (items: ReorderTaskItem[]) =>
+    ipcRenderer.invoke(IPC_CHANNELS.TASK_REORDER, items),
 
   // Sub-task operations
   createSubTask: (taskId: string, data: CreateSubTaskInput) =>

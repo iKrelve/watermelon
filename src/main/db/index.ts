@@ -101,6 +101,7 @@ function createTables(sqliteDb: Database.Database): void {
       reminder_time TEXT,
       recurrence_rule TEXT,
       completed_at TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -134,6 +135,7 @@ function createTables(sqliteDb: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_tasks_category_id ON tasks(category_id);
     CREATE INDEX IF NOT EXISTS idx_tasks_due_date ON tasks(due_date);
     CREATE INDEX IF NOT EXISTS idx_tasks_priority ON tasks(priority);
+    CREATE INDEX IF NOT EXISTS idx_tasks_sort_order ON tasks(sort_order);
     CREATE INDEX IF NOT EXISTS idx_sub_tasks_task_id ON sub_tasks(task_id);
     CREATE INDEX IF NOT EXISTS idx_task_tags_task_id ON task_tags(task_id);
     CREATE INDEX IF NOT EXISTS idx_task_tags_tag_id ON task_tags(tag_id);
@@ -182,6 +184,25 @@ const MIGRATIONS: Migration[] = [
     description: 'Add index on tasks(completed_at) for statistics queries',
     up: (db) => {
       db.exec('CREATE INDEX IF NOT EXISTS idx_tasks_completed_at ON tasks(completed_at)')
+    },
+  },
+  {
+    version: 3,
+    description: 'Add sort_order column to tasks for drag-and-drop reordering',
+    up: (db) => {
+      const columns = (db.pragma('table_info(tasks)') as { name: string }[]).map(
+        (col) => col.name
+      )
+      if (!columns.includes('sort_order')) {
+        db.exec('ALTER TABLE tasks ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0')
+        // Initialize sort_order based on created_at (newest first gets lowest order)
+        db.exec(`
+          UPDATE tasks SET sort_order = (
+            SELECT COUNT(*) FROM tasks AS t2 WHERE t2.created_at > tasks.created_at
+          )
+        `)
+      }
+      db.exec('CREATE INDEX IF NOT EXISTS idx_tasks_sort_order ON tasks(sort_order)')
     },
   },
 ]

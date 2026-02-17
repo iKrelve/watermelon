@@ -14,6 +14,7 @@ import type {
   StatsSummary,
   DailyTrend,
   AppError,
+  ReorderTaskItem,
 } from '../shared/types'
 
 type ApiResult<T> = T | { __error: AppError }
@@ -26,6 +27,7 @@ interface XiaoXiguaApi {
   getTasks(filter?: TaskFilter): Promise<ApiResult<Task[]>>
   getTaskById(id: string): Promise<ApiResult<Task | null>>
   completeTask(id: string): Promise<ApiResult<{ completedTask: Task; nextTask?: Task }>>
+  reorderTasks(items: ReorderTaskItem[]): Promise<ApiResult<void>>
 
   // Sub-task
   createSubTask(taskId: string, data: CreateSubTaskInput): Promise<ApiResult<SubTask>>

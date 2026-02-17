@@ -9,6 +9,7 @@ import type {
   UpdateCategoryInput,
   TaskFilter,
   AppError,
+  ReorderTaskItem,
 } from '../../shared/types'
 import { TaskService } from '../services/task.service'
 import { CategoryService } from '../services/category.service'
@@ -103,6 +104,10 @@ export function registerIpcHandlers(
       }
       return result
     })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.TASK_REORDER, (_event, items: ReorderTaskItem[]) => {
+    return handleAsync(() => taskService.reorder(items))
   })
 
   // === Sub-Task Operations ===

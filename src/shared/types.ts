@@ -30,12 +30,20 @@ export interface Task {
   reminderTime: string | null // ISO datetime string
   recurrenceRule: RecurrenceRule | null
   completedAt: string | null // ISO datetime string
+  sortOrder: number // Manual sort order for drag-and-drop reordering
   createdAt: string // ISO datetime string
   updatedAt: string // ISO datetime string
   // Relations (populated when needed)
   subTasks?: SubTask[]
   tags?: Tag[]
   category?: Category | null
+}
+
+// --- Reorder Types ---
+
+export interface ReorderTaskItem {
+  id: string
+  sortOrder: number
 }
 
 export interface SubTask {
