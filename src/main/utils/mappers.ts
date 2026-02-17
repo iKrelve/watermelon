@@ -17,6 +17,7 @@ export function rowToTask(row: typeof tasks.$inferSelect): Task {
     reminderTime: row.reminderTime,
     recurrenceRule: row.recurrenceRule ? JSON.parse(row.recurrenceRule) : null,
     completedAt: row.completedAt,
+    sortOrder: row.sortOrder ?? 0,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   }

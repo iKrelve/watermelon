@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react'
-import { useApp } from '@/context/AppContext'
+import { useUIStore } from '@/stores/ui-store'
+import { useTasksQuery, useDeleteTask, useCompleteTask } from '@/hooks/useDataQueries'
 
 /**
  * Global keyboard shortcuts hook.
@@ -19,7 +20,15 @@ import { useApp } from '@/context/AppContext'
  * instead of fragile CSS class / placeholder selectors.
  */
 export function useKeyboardShortcuts(): void {
-  const { state, dispatch, deleteTask, completeTask } = useApp()
+  const selectedTaskId = useUIStore((s) => s.selectedTaskId)
+  const selectTask = useUIStore((s) => s.selectTask)
+  const toggleCompactMode = useUIStore((s) => s.toggleCompactMode)
+  const toggleCommandPalette = useUIStore((s) => s.toggleCommandPalette)
+  const setSearchQuery = useUIStore((s) => s.setSearchQuery)
+
+  const { data: tasks = [] } = useTasksQuery()
+  const deleteTaskMut = useDeleteTask()
+  const completeTaskMut = useCompleteTask()
 
   const handleKeyDown = useCallback(
     async (e: KeyboardEvent) => {
@@ -41,14 +50,14 @@ export function useKeyboardShortcuts(): void {
       // Cmd+\: Toggle compact mode
       if (isMeta && e.key === '\\') {
         e.preventDefault()
-        dispatch({ type: 'TOGGLE_COMPACT_MODE' })
+        toggleCompactMode()
         return
       }
 
       // Cmd+K: Open command palette
       if (isMeta && e.key === 'k') {
         e.preventDefault()
-        dispatch({ type: 'TOGGLE_COMMAND_PALETTE' })
+        toggleCommandPalette()
         return
       }
 
@@ -80,20 +89,20 @@ export function useKeyboardShortcuts(): void {
           target.blur()
           return
         }
-        dispatch({ type: 'SELECT_TASK', payload: null })
-        dispatch({ type: 'SET_SEARCH_QUERY', payload: '' })
+        selectTask(null)
+        setSearchQuery('')
         return
       }
 
       // The following shortcuts require a selected task
-      if (!state.selectedTaskId) return
+      if (!selectedTaskId) return
 
       // Cmd+D or Delete: Delete selected task
       if ((isMeta && e.key === 'd') || e.key === 'Delete' || e.key === 'Backspace') {
         if (e.key === 'Backspace' && !isMeta) return // Only Cmd+Backspace
         e.preventDefault()
         try {
-          await deleteTask(state.selectedTaskId)
+          await deleteTaskMut.mutateAsync(selectedTaskId)
         } catch {
           // Error handled globally
         }
@@ -103,10 +112,10 @@ export function useKeyboardShortcuts(): void {
       // Enter: Complete selected task
       if (e.key === 'Enter') {
         e.preventDefault()
-        const task = state.tasks.find((t) => t.id === state.selectedTaskId)
+        const task = tasks.find((t) => t.id === selectedTaskId)
         if (task && task.status === 'todo') {
           try {
-            await completeTask(state.selectedTaskId)
+            await completeTaskMut.mutateAsync(selectedTaskId)
           } catch {
             // Error handled globally
           }
@@ -117,13 +126,13 @@ export function useKeyboardShortcuts(): void {
       // Arrow Up/Down: Navigate tasks
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault()
-        const visibleTasks = state.tasks.filter(() => {
+        const visibleTasks = tasks.filter(() => {
           // Simple: use all tasks in current view, actual filtering happens at component level
           // For keyboard nav, we just navigate through the task list order
           return true
         })
         const currentIndex = visibleTasks.findIndex(
-          (t) => t.id === state.selectedTaskId
+          (t) => t.id === selectedTaskId
         )
 
         let nextIndex: number
@@ -134,12 +143,12 @@ export function useKeyboardShortcuts(): void {
         }
 
         if (visibleTasks[nextIndex]) {
-          dispatch({ type: 'SELECT_TASK', payload: visibleTasks[nextIndex].id })
+          selectTask(visibleTasks[nextIndex].id)
         }
         return
       }
     },
-    [state.selectedTaskId, state.tasks, dispatch, deleteTask, completeTask]
+    [selectedTaskId, tasks, selectTask, setSearchQuery, toggleCompactMode, toggleCommandPalette, deleteTaskMut, completeTaskMut]
   )
 
   useEffect(() => {

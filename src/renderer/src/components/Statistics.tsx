@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
@@ -8,8 +8,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useApp } from '@/context/AppContext'
-import type { StatsSummary, DailyTrend } from '../../../shared/types'
+import { useStatsQuery, useDailyTrendQuery } from '@/hooks/useDataQueries'
 import {
   AreaChart,
   Area,
@@ -33,30 +32,10 @@ const PERIOD_LABELS: Record<StatsPeriod, string> = {
  * Statistics view - Shows task completion stats and trends.
  */
 export function Statistics() {
-  const { getStats, getDailyTrend } = useApp()
   const [period, setPeriod] = useState<StatsPeriod>('week')
-  const [stats, setStats] = useState<StatsSummary | null>(null)
-  const [trend, setTrend] = useState<DailyTrend[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const loadStats = async () => {
-      setLoading(true)
-      try {
-        const [statsResult, trendResult] = await Promise.all([
-          getStats(period),
-          getDailyTrend(30),
-        ])
-        setStats(statsResult)
-        setTrend(trendResult)
-      } catch {
-        // Error handled by global handler
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadStats()
-  }, [period, getStats, getDailyTrend])
+  const { data: stats, isLoading: statsLoading } = useStatsQuery(period)
+  const { data: trend = [], isLoading: trendLoading } = useDailyTrendQuery(30)
+  const loading = statsLoading || trendLoading
 
   if (loading) {
     return (

@@ -13,6 +13,7 @@ import type {
   UpdateSubTaskInput,
   RecurrenceRule,
   TaskFilter,
+  ReorderTaskItem,
 } from '../../shared/types'
 import { getNextOccurrence } from '../utils/recurrence'
 import { rowToTask, rowToSubTask } from '../utils/mappers'
@@ -39,6 +40,12 @@ export class TaskService {
     const id = uuidv4()
     const now = new Date().toISOString()
 
+    // Assign sort_order: new tasks get sortOrder 0, push existing tasks down
+    this.db
+      .update(tasks)
+      .set({ sortOrder: sql`${tasks.sortOrder} + 1` })
+      .run()
+
     const row = {
       id,
       title: input.title.trim(),
@@ -50,6 +57,7 @@ export class TaskService {
       reminderTime: input.reminderTime ?? null,
       recurrenceRule: input.recurrenceRule ? JSON.stringify(input.recurrenceRule) : null,
       completedAt: null,
+      sortOrder: 0,
       createdAt: now,
       updatedAt: now,
     }
@@ -99,9 +107,10 @@ export class TaskService {
         .select()
         .from(tasks)
         .where(eq(tasks.status, filter.status))
+        .orderBy(tasks.sortOrder)
         .all()
     } else {
-      rows = this.db.select().from(tasks).all()
+      rows = this.db.select().from(tasks).orderBy(tasks.sortOrder).all()
     }
 
     const taskList = rows.map((r) => rowToTask(r))
@@ -309,6 +318,35 @@ export class TaskService {
   /**
    * Get the total number of tasks in the database.
    */
+  // ---- Reorder Tasks ----
+
+  reorder(items: ReorderTaskItem[]): void {
+    if (items.length === 0) return
+
+    // Use raw database for transaction if available, otherwise update one by one
+    if (this.rawDb) {
+      const updateStmt = this.rawDb.prepare(
+        'UPDATE tasks SET sort_order = ?, updated_at = ? WHERE id = ?'
+      )
+      const now = new Date().toISOString()
+      const runAll = this.rawDb.transaction(() => {
+        for (const item of items) {
+          updateStmt.run(item.sortOrder, now, item.id)
+        }
+      })
+      runAll()
+    } else {
+      const now = new Date().toISOString()
+      for (const item of items) {
+        this.db
+          .update(tasks)
+          .set({ sortOrder: item.sortOrder, updatedAt: now })
+          .where(eq(tasks.id, item.id))
+          .run()
+      }
+    }
+  }
+
   count(filter?: { status?: Task['status'] }): number {
     if (filter?.status) {
       const result = this.db

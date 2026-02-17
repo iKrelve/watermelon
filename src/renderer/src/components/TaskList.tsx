@@ -1,4 +1,21 @@
-import { useMemo, useState, useRef, useCallback } from 'react'
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +27,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useApp } from '@/context/AppContext'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
+import { useUIStore } from '@/stores/ui-store'
+import {
+  useTasksQuery,
+  useCategoriesQuery,
+  useTagsQuery,
+  useCreateTask,
+  useUpdateTask,
+  useDeleteTask,
+  useCompleteTask,
+  useReorderTasks,
+  useUpdateSubTask,
+} from '@/hooks/useDataQueries'
 import { filterToday, filterUpcoming, isOverdue } from '@/utils/date-filters'
 import {
   getPriorityLabel,
@@ -20,7 +58,7 @@ import {
 } from '@/utils/priority'
 import { format, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import type { Task, SubTask } from '../../../shared/types'
+import type { Task, SubTask, Priority } from '../../../shared/types'
 import {
   CalendarDays,
   AlertCircle,
@@ -39,6 +77,10 @@ import {
   ClipboardList,
   ChevronRight,
   ChevronDown,
+  GripVertical,
+  Trash2,
+  Flag,
+  CheckCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -70,7 +112,7 @@ function applySortOption(tasks: Task[], sortOption: SortOption): Task[] {
       return [...tasks].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     case 'default':
     default:
-      return tasks
+      return [...tasks].sort((a, b) => a.sortOrder - b.sortOrder)
   }
 }
 
@@ -115,8 +157,11 @@ function getFilterTitle(
 // ============================================================
 
 function useFilteredTasks(): Task[] {
-  const { state } = useApp()
-  const { tasks, filterView, filterCategoryId, filterTagIds, searchQuery } = state
+  const filterView = useUIStore((s) => s.filterView)
+  const filterCategoryId = useUIStore((s) => s.filterCategoryId)
+  const filterTagIds = useUIStore((s) => s.filterTagIds)
+  const searchQuery = useUIStore((s) => s.searchQuery)
+  const { data: tasks = [] } = useTasksQuery()
 
   return useMemo(() => {
     let filtered: Task[]
@@ -260,58 +305,45 @@ function SubTaskRow({
 }
 
 // ============================================================
-// TaskItem component
+// TaskItemContent — shared content for TaskItem and DragOverlay
 // ============================================================
 
-function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): React.JSX.Element {
-  const { dispatch, completeTask, updateSubTask, refreshTasks } = useApp()
+function TaskItemContent({
+  task,
+  isSelected,
+  isMultiSelected,
+  isDragging,
+  handleSelect,
+  handleComplete,
+  toggleExpand,
+  expanded,
+  subTasks,
+  handleToggleSubTask,
+  dragHandleProps,
+}: {
+  task: Task
+  isSelected: boolean
+  isMultiSelected?: boolean
+  isDragging?: boolean
+  handleSelect: (e: React.MouseEvent) => void
+  handleComplete: (checked: boolean | 'indeterminate') => void
+  toggleExpand: (e: React.MouseEvent) => void
+  expanded: boolean
+  subTasks: SubTask[]
+  handleToggleSubTask: (id: string, completed: boolean) => void
+  dragHandleProps?: Record<string, unknown>
+}): React.JSX.Element {
   const overdue = isOverdue(task)
   const isCompleted = task.status === 'completed'
-  const subTasks = task.subTasks ?? []
   const subTaskCount = subTasks.length
   const completedSubTasks = subTasks.filter((s) => s.completed).length
-  const [expanded, setExpanded] = useState(subTaskCount > 0)
-
-  const handleSelect = (): void => {
-    dispatch({ type: 'SELECT_TASK', payload: task.id })
-  }
-
-  const handleComplete = async (checked: boolean | 'indeterminate'): Promise<void> => {
-    if (checked === true && !isCompleted) {
-      try {
-        await completeTask(task.id)
-      } catch {
-        // Will be handled by error handler
-      }
-    }
-  }
-
-  const handleToggleSubTask = useCallback(
-    async (subTaskId: string, completed: boolean): Promise<void> => {
-      try {
-        await updateSubTask(subTaskId, { completed })
-        await refreshTasks()
-      } catch {
-        // Error handled globally
-      }
-    },
-    [updateSubTask, refreshTasks]
-  )
-
-  const toggleExpand = useCallback(
-    (e: React.MouseEvent): void => {
-      e.stopPropagation()
-      setExpanded((prev) => !prev)
-    },
-    []
-  )
 
   const formattedDueDate = task.dueDate
     ? format(parseISO(task.dueDate), 'M月d日', { locale: zhCN })
     : null
 
   return (
-    <div className="animate-list-enter">
+    <div className={cn('animate-list-enter', isDragging && 'opacity-50')}>
       {/* Main task row */}
       <div
         role="button"
@@ -321,7 +353,7 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
-            handleSelect()
+            handleSelect(e as unknown as React.MouseEvent)
           }
         }}
         className={cn(
@@ -330,9 +362,20 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
           'transition-all duration-150',
           'hover:bg-accent/60',
           isSelected && 'bg-accent shadow-sm',
+          isMultiSelected && 'bg-primary/10 ring-1 ring-inset ring-primary/30',
           overdue && !isCompleted && 'ring-1 ring-inset ring-destructive/20 bg-destructive/5'
         )}
       >
+        {/* Drag handle */}
+        {dragHandleProps && (
+          <div
+            {...dragHandleProps}
+            className="shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors -ml-1 mr-0"
+          >
+            <GripVertical className="size-4" />
+          </div>
+        )}
+
         {/* Priority stripe */}
         {task.priority !== 'none' && (
           <div
@@ -469,6 +512,226 @@ function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): Re
 }
 
 // ============================================================
+// SortableTaskItem — wraps TaskItemContent with sortable behavior
+// ============================================================
+
+function SortableTaskItem({
+  task,
+  isSelected,
+  isMultiSelected,
+  onSelect,
+}: {
+  task: Task
+  isSelected: boolean
+  isMultiSelected: boolean
+  onSelect: (taskId: string, e: React.MouseEvent) => void
+}): React.JSX.Element {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id })
+
+  const completeTaskMut = useCompleteTask()
+  const updateSubTaskMut = useUpdateSubTask()
+const subTasks = task.subTasks ?? []
+  const subTaskCount = subTasks.length
+  const [expanded, setExpanded] = useState(subTaskCount > 0)
+
+  const handleSelect = useCallback(
+    (e: React.MouseEvent): void => {
+      onSelect(task.id, e)
+    },
+    [task.id, onSelect]
+  )
+
+  const handleComplete = async (checked: boolean | 'indeterminate'): Promise<void> => {
+    if (checked === true && task.status !== 'completed') {
+      try {
+        await completeTaskMut.mutateAsync(task.id)
+      } catch {
+        // Will be handled by error handler
+      }
+    }
+  }
+
+  const handleToggleSubTask = useCallback(
+    async (subTaskId: string, completed: boolean): Promise<void> => {
+      try {
+        await updateSubTaskMut.mutateAsync({ id: subTaskId, data: { completed } })
+      } catch {
+        // Error handled globally
+      }
+    },
+    [updateSubTaskMut]
+  )
+
+  const toggleExpand = useCallback(
+    (e: React.MouseEvent): void => {
+      e.stopPropagation()
+      setExpanded((prev) => !prev)
+    },
+    []
+  )
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <TaskItemContent
+        task={task}
+        isSelected={isSelected}
+        isMultiSelected={isMultiSelected}
+        isDragging={isDragging}
+        handleSelect={handleSelect}
+        handleComplete={handleComplete}
+        toggleExpand={toggleExpand}
+        expanded={expanded}
+        subTasks={subTasks}
+        handleToggleSubTask={handleToggleSubTask}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  )
+}
+
+// ============================================================
+// TaskItem — non-sortable version (for non-reorderable views)
+// ============================================================
+
+function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): React.JSX.Element {
+  const selectTask = useUIStore((s) => s.selectTask)
+  const completeTaskMut = useCompleteTask()
+  const updateSubTaskMut = useUpdateSubTask()
+  const subTasks = task.subTasks ?? []
+  const subTaskCount = subTasks.length
+  const [expanded, setExpanded] = useState(subTaskCount > 0)
+
+  const handleSelect = (): void => {
+    selectTask(task.id)
+  }
+
+  const handleComplete = async (checked: boolean | 'indeterminate'): Promise<void> => {
+    if (checked === true && task.status !== 'completed') {
+      try {
+        await completeTaskMut.mutateAsync(task.id)
+      } catch {
+        // Will be handled by error handler
+      }
+    }
+  }
+
+  const handleToggleSubTask = useCallback(
+    async (subTaskId: string, completed: boolean): Promise<void> => {
+      try {
+        await updateSubTaskMut.mutateAsync({ id: subTaskId, data: { completed } })
+      } catch {
+        // Error handled globally
+      }
+    },
+    [updateSubTaskMut]
+  )
+
+  const toggleExpand = useCallback(
+    (e: React.MouseEvent): void => {
+      e.stopPropagation()
+      setExpanded((prev) => !prev)
+    },
+    []
+  )
+
+  return (
+    <TaskItemContent
+      task={task}
+      isSelected={isSelected}
+      handleSelect={handleSelect}
+      handleComplete={handleComplete}
+      toggleExpand={toggleExpand}
+      expanded={expanded}
+      subTasks={subTasks}
+      handleToggleSubTask={handleToggleSubTask}
+    />
+  )
+}
+
+// ============================================================
+// DragOverlayTaskItem — rendered during drag
+// ============================================================
+
+function DragOverlayTaskItem({ task }: { task: Task }): React.JSX.Element {
+  const overdue = isOverdue(task)
+  const isCompleted = task.status === 'completed'
+  const formattedDueDate = task.dueDate
+    ? format(parseISO(task.dueDate), 'M月d日', { locale: zhCN })
+    : null
+
+  return (
+    <div
+      className={cn(
+        'relative flex items-center gap-3 px-4 py-3',
+        'rounded-lg bg-background shadow-lg border border-border/80',
+        'opacity-90 cursor-grabbing'
+      )}
+    >
+      <GripVertical className="size-4 text-muted-foreground/60 shrink-0" />
+
+      {/* Priority stripe */}
+      {task.priority !== 'none' && (
+        <div
+          className={cn(
+            'absolute left-0 top-2 bottom-2 w-[3px] rounded-full',
+            getPriorityStripeColor(task.priority)
+          )}
+        />
+      )}
+
+      <div className="flex-1 min-w-0">
+        <p
+          className={cn(
+            'text-[13px] leading-snug truncate',
+            isCompleted && 'line-through text-muted-foreground'
+          )}
+        >
+          {task.title}
+        </p>
+        <div className="flex items-center gap-2 mt-1">
+          {formattedDueDate && (
+            <span
+              className={cn(
+                'inline-flex items-center gap-1 text-[11px]',
+                overdue && !isCompleted
+                  ? 'text-destructive font-medium'
+                  : 'text-muted-foreground'
+              )}
+            >
+              <CalendarDays className="size-3" />
+              {formattedDueDate}
+            </span>
+          )}
+          {task.priority !== 'none' && (
+            <Badge
+              variant="secondary"
+              className={cn(
+                'text-[10px] px-1.5 py-0 h-4 border-0 font-medium',
+                getPriorityBadgeClasses(task.priority)
+              )}
+            >
+              {getPriorityLabel(task.priority)}
+            </Badge>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
 // AddTaskBar component
 // ============================================================
 
@@ -477,7 +740,10 @@ function AddTaskBar(): React.JSX.Element | null {
   const [isFocused, setIsFocused] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { createTask, state, dispatch } = useApp()
+  const filterView = useUIStore((s) => s.filterView)
+  const filterCategoryId = useUIStore((s) => s.filterCategoryId)
+  const selectTask = useUIStore((s) => s.selectTask)
+  const createTaskMut = useCreateTask()
 
   const handleSubmit = async (): Promise<void> => {
     const trimmed = title.trim()
@@ -485,16 +751,16 @@ function AddTaskBar(): React.JSX.Element | null {
 
     setIsSubmitting(true)
     try {
-      const task = await createTask({
+      const task = await createTaskMut.mutateAsync({
         title: trimmed,
         categoryId:
-          state.filterView === 'category' && state.filterCategoryId
-            ? state.filterCategoryId
+          filterView === 'category' && filterCategoryId
+            ? filterCategoryId
             : undefined,
       })
       setTitle('')
       // Auto-select the newly created task so user can immediately edit details
-      dispatch({ type: 'SELECT_TASK', payload: task.id })
+      selectTask(task.id)
       inputRef.current?.focus()
     } catch {
       // Will be handled by error handler
@@ -515,7 +781,7 @@ function AddTaskBar(): React.JSX.Element | null {
   }
 
   // Don't show AddTaskBar in completed view
-  if (state.filterView === 'completed') return null
+  if (filterView === 'completed') return null
 
   return (
     <div
@@ -569,13 +835,14 @@ function AddTaskBar(): React.JSX.Element | null {
 // ============================================================
 
 function SearchBar(): React.JSX.Element {
-  const { state, dispatch } = useApp()
+  const searchQuery = useUIStore((s) => s.searchQuery)
+  const setSearchQuery = useUIStore((s) => s.setSearchQuery)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const toggleSearch = (): void => {
     if (isSearchOpen) {
-      dispatch({ type: 'SET_SEARCH_QUERY', payload: '' })
+      setSearchQuery('')
       setIsSearchOpen(false)
     } else {
       setIsSearchOpen(true)
@@ -595,18 +862,16 @@ function SearchBar(): React.JSX.Element {
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
           <Input
             ref={inputRef}
-            value={state.searchQuery}
-            onChange={(e) =>
-              dispatch({ type: 'SET_SEARCH_QUERY', payload: e.target.value })
-            }
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="搜索任务..."
             data-shortcut-target="search"
             className="h-7 pl-7 pr-7 text-xs border-muted rounded-md"
           />
-          {state.searchQuery && (
+          {searchQuery && (
             <button
               aria-label="清除搜索"
-              onClick={() => dispatch({ type: 'SET_SEARCH_QUERY', payload: '' })}
+              onClick={() => setSearchQuery('')}
               className="absolute right-2 top-1/2 -translate-y-1/2"
             >
               <X className="size-3 text-muted-foreground hover:text-foreground" />
@@ -740,25 +1005,133 @@ function EmptyState({
 }
 
 // ============================================================
+// TaskContextMenu — right-click context menu for tasks
+// ============================================================
+
+const PRIORITY_OPTIONS: { value: Priority; label: string; color: string }[] = [
+  { value: 'high', label: '高', color: 'text-red-500' },
+  { value: 'medium', label: '中', color: 'text-amber-500' },
+  { value: 'low', label: '低', color: 'text-blue-500' },
+  { value: 'none', label: '无', color: 'text-muted-foreground' },
+]
+
+function TaskContextMenu({
+  children,
+  selectedIds,
+  onBatchDelete,
+  onBatchComplete,
+  onBatchSetPriority,
+  onClearSelection,
+}: {
+  children: React.ReactNode
+  selectedIds: Set<string>
+  onBatchDelete: () => void
+  onBatchComplete: () => void
+  onBatchSetPriority: (priority: Priority) => void
+  onClearSelection: () => void
+}): React.JSX.Element {
+  const count = selectedIds.size
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        {count > 0 && (
+          <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">
+            已选择 {count} 个任务
+          </div>
+        )}
+        <ContextMenuItem onClick={onBatchComplete} disabled={count === 0}>
+          <CheckCheck className="mr-2 size-4" />
+          批量完成
+        </ContextMenuItem>
+        <ContextMenuSub>
+          <ContextMenuSubTrigger disabled={count === 0}>
+            <Flag className="mr-2 size-4" />
+            设置优先级
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent className="w-36">
+            {PRIORITY_OPTIONS.map((opt) => (
+              <ContextMenuItem
+                key={opt.value}
+                onClick={() => onBatchSetPriority(opt.value)}
+              >
+                <Flag className={cn('mr-2 size-4', opt.color)} />
+                {opt.label}
+              </ContextMenuItem>
+            ))}
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          onClick={onBatchDelete}
+          disabled={count === 0}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="mr-2 size-4" />
+          批量删除
+        </ContextMenuItem>
+        {count > 0 && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={onClearSelection}>
+              <X className="mr-2 size-4" />
+              取消选择
+            </ContextMenuItem>
+          </>
+        )}
+      </ContextMenuContent>
+    </ContextMenu>
+  )
+}
+
+// ============================================================
 // TaskList (main export)
 // ============================================================
 
 export function TaskList(): React.JSX.Element {
-  const { state } = useApp()
+  const selectedTaskId = useUIStore((s) => s.selectedTaskId)
+  const selectTask = useUIStore((s) => s.selectTask)
+  const filterView = useUIStore((s) => s.filterView)
+  const filterCategoryId = useUIStore((s) => s.filterCategoryId)
+  const filterTagIds = useUIStore((s) => s.filterTagIds)
+
+  const { data: categories = [] } = useCategoriesQuery()
+  const { data: tags = [] } = useTagsQuery()
+
+  const reorderTasksMut = useReorderTasks()
+  const deleteTaskMut = useDeleteTask()
+  const completeTaskMut = useCompleteTask()
+  const updateTaskMut = useUpdateTask()
   const filteredTasks = useFilteredTasks()
   const [sortOption, setSortOption] = useState<SortOption>('default')
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const lastClickedRef = useRef<string | null>(null)
 
   const sortedTasks = useMemo(
     () => applySortOption(filteredTasks, sortOption),
     [filteredTasks, sortOption]
   )
 
+  // Clear multi-selection when filter view changes
+  useEffect(() => {
+    setSelectedIds(new Set())
+    lastClickedRef.current = null
+  }, [filterView, filterCategoryId])
+
+  // Check if drag-and-drop should be enabled (only in default sort + all/category views)
+  const isDragEnabled = sortOption === 'default' &&
+    (filterView === 'all' || filterView === 'category')
+
   const title = getFilterTitle(
-    state.filterView,
-    state.categories,
-    state.filterCategoryId,
-    state.tags,
-    state.filterTagIds
+    filterView,
+    categories,
+    filterCategoryId,
+    tags,
+    filterTagIds
   )
 
   const focusAddTask = (): void => {
@@ -768,6 +1141,166 @@ export function TaskList(): React.JSX.Element {
     input?.focus()
   }
 
+  // Multi-select handler: Cmd/Ctrl+Click toggles, Shift+Click range-selects
+  const handleTaskSelect = useCallback(
+    (taskId: string, e: React.MouseEvent): void => {
+      const isMeta = e.metaKey || e.ctrlKey
+      const isShift = e.shiftKey
+
+      if (isMeta) {
+        // Toggle individual selection
+        setSelectedIds((prev) => {
+          const next = new Set(prev)
+          if (next.has(taskId)) {
+            next.delete(taskId)
+          } else {
+            next.add(taskId)
+          }
+          return next
+        })
+        lastClickedRef.current = taskId
+        // Also update detail panel
+        selectTask(taskId)
+      } else if (isShift && lastClickedRef.current) {
+        // Range selection
+        const lastIndex = sortedTasks.findIndex((t) => t.id === lastClickedRef.current)
+        const currentIndex = sortedTasks.findIndex((t) => t.id === taskId)
+        if (lastIndex !== -1 && currentIndex !== -1) {
+          const start = Math.min(lastIndex, currentIndex)
+          const end = Math.max(lastIndex, currentIndex)
+          const rangeIds = sortedTasks.slice(start, end + 1).map((t) => t.id)
+          setSelectedIds((prev) => {
+            const next = new Set(prev)
+            for (const id of rangeIds) {
+              next.add(id)
+            }
+            return next
+          })
+        }
+        selectTask(taskId)
+      } else {
+        // Normal click — clear multi-selection and select single task
+        setSelectedIds(new Set())
+        lastClickedRef.current = taskId
+        selectTask(taskId)
+      }
+    },
+    [sortedTasks, selectTask]
+  )
+
+  // Batch operations
+  const handleBatchDelete = useCallback(async (): Promise<void> => {
+    const ids = Array.from(selectedIds)
+    for (const id of ids) {
+      try {
+        await deleteTaskMut.mutateAsync(id)
+      } catch {
+        // Error handled globally
+      }
+    }
+    setSelectedIds(new Set())
+  }, [selectedIds, deleteTaskMut])
+
+  const handleBatchComplete = useCallback(async (): Promise<void> => {
+    const ids = Array.from(selectedIds)
+    for (const id of ids) {
+      try {
+        await completeTaskMut.mutateAsync(id)
+      } catch {
+        // Error handled globally
+      }
+    }
+    setSelectedIds(new Set())
+  }, [selectedIds, completeTaskMut])
+
+  const handleBatchSetPriority = useCallback(
+    async (priority: Priority): Promise<void> => {
+      const ids = Array.from(selectedIds)
+      for (const id of ids) {
+        try {
+          await updateTaskMut.mutateAsync({ id, data: { priority } })
+        } catch {
+          // Error handled globally
+        }
+      }
+    },
+    [selectedIds, updateTaskMut]
+  )
+
+  const handleClearSelection = useCallback((): void => {
+    setSelectedIds(new Set())
+  }, [])
+
+  // Keyboard shortcut: Escape to clear selection, Cmd+A to select all
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape' && selectedIds.size > 0) {
+        setSelectedIds(new Set())
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a' && sortedTasks.length > 0) {
+        // Only capture Cmd+A when task list is focused (not in input)
+        const active = document.activeElement
+        if (active?.tagName === 'INPUT' || active?.tagName === 'TEXTAREA') return
+        e.preventDefault()
+        setSelectedIds(new Set(sortedTasks.map((t) => t.id)))
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [selectedIds.size, sortedTasks])
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Must move 8px before drag starts, prevents accidental drags
+      },
+    })
+  )
+
+  const activeTask = useMemo(
+    () => (activeId ? sortedTasks.find((t) => t.id === activeId) : null),
+    [activeId, sortedTasks]
+  )
+
+  const handleDragStart = useCallback((event: DragStartEvent): void => {
+    setActiveId(String(event.active.id))
+  }, [])
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent): Promise<void> => {
+      setActiveId(null)
+      const { active, over } = event
+      if (!over || active.id === over.id) return
+
+      const oldIndex = sortedTasks.findIndex((t) => t.id === active.id)
+      const newIndex = sortedTasks.findIndex((t) => t.id === over.id)
+      if (oldIndex === -1 || newIndex === -1) return
+
+      const reordered = arrayMove(sortedTasks, oldIndex, newIndex)
+      const items = reordered.map((task, index) => ({
+        id: task.id,
+        sortOrder: index,
+      }))
+
+      try {
+        await reorderTasksMut.mutateAsync(items)
+      } catch {
+        // Error handled by context
+      }
+    },
+    [sortedTasks, reorderTasksMut]
+  )
+
+  const handleDragCancel = useCallback((): void => {
+    setActiveId(null)
+  }, [])
+
+  const taskIds = useMemo(
+    () => sortedTasks.map((t) => t.id),
+    [sortedTasks]
+  )
+
   return (
     <div className="flex h-full flex-col">
       {/* List Header */}
@@ -776,6 +1309,11 @@ export function TaskList(): React.JSX.Element {
           <h2 className="text-base font-semibold tracking-tight truncate">{title}</h2>
           <p className="text-[11px] text-muted-foreground/70 mt-0.5">
             {sortedTasks.length} 个任务
+            {selectedIds.size > 0 && (
+              <span className="ml-1 text-primary font-medium">
+                · 已选 {selectedIds.size}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
@@ -790,17 +1328,61 @@ export function TaskList(): React.JSX.Element {
       {/* Task Items */}
       <ScrollArea className="flex-1">
         {sortedTasks.length === 0 ? (
-          <EmptyState filterView={state.filterView} onAddTask={focusAddTask} />
+          <EmptyState filterView={filterView} onAddTask={focusAddTask} />
+        ) : isDragEnabled ? (
+          <TaskContextMenu
+            selectedIds={selectedIds}
+            onBatchDelete={handleBatchDelete}
+            onBatchComplete={handleBatchComplete}
+            onBatchSetPriority={handleBatchSetPriority}
+            onClearSelection={handleClearSelection}
+          >
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
+            >
+              <SortableContext
+                items={taskIds}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="py-1.5 px-0.5">
+                  {sortedTasks.map((task) => (
+                    <SortableTaskItem
+                      key={task.id}
+                      task={task}
+                      isSelected={selectedTaskId === task.id}
+                      isMultiSelected={selectedIds.has(task.id)}
+                      onSelect={handleTaskSelect}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+              <DragOverlay>
+                {activeTask ? <DragOverlayTaskItem task={activeTask} /> : null}
+              </DragOverlay>
+            </DndContext>
+          </TaskContextMenu>
         ) : (
-          <div className="py-1.5 px-0.5">
-            {sortedTasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                isSelected={state.selectedTaskId === task.id}
-              />
-            ))}
-          </div>
+          <TaskContextMenu
+            selectedIds={selectedIds}
+            onBatchDelete={handleBatchDelete}
+            onBatchComplete={handleBatchComplete}
+            onBatchSetPriority={handleBatchSetPriority}
+            onClearSelection={handleClearSelection}
+          >
+            <div className="py-1.5 px-0.5">
+              {sortedTasks.map((task) => (
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  isSelected={selectedTaskId === task.id}
+                />
+              ))}
+            </div>
+          </TaskContextMenu>
         )}
       </ScrollArea>
     </div>

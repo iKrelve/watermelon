@@ -27,6 +27,7 @@ export const tasks = sqliteTable('tasks', {
   reminderTime: text('reminder_time'), // ISO 8601 datetime string
   recurrenceRule: text('recurrence_rule'), // JSON string of RecurrenceRule
   completedAt: text('completed_at'), // ISO 8601 datetime string
+  sortOrder: integer('sort_order').notNull().default(0), // Manual sort order for drag-and-drop
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 })

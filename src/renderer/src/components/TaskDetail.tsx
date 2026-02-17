@@ -41,7 +41,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { useApp } from '@/context/AppContext'
+import { useUIStore } from '@/stores/ui-store'
+import {
+  useTasksQuery,
+  useCategoriesQuery,
+  useTagsQuery,
+  useUpdateTask,
+  useDeleteTask,
+  useCreateSubTask,
+  useUpdateSubTask,
+  useDeleteSubTask,
+  useCreateTag,
+  useAddTagToTask,
+  useRemoveTagFromTask,
+} from '@/hooks/useDataQueries'
 import {
   getPriorityColor,
   getPriorityBadgeClasses,
@@ -369,7 +382,9 @@ function SubTaskItem({
 // ============================================================
 
 function SubTaskList({ task }: { task: Task }): React.JSX.Element {
-  const { createSubTask, updateSubTask, deleteSubTask, refreshTasks } = useApp()
+const createSubTaskMut = useCreateSubTask()
+  const updateSubTaskMut = useUpdateSubTask()
+  const deleteSubTaskMut = useDeleteSubTask()
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -381,7 +396,7 @@ function SubTaskList({ task }: { task: Task }): React.JSX.Element {
     if (!trimmed) return
 
     try {
-      await createSubTask(task.id, { title: trimmed })
+      await createSubTaskMut.mutateAsync({ taskId: task.id, data: { title: trimmed } })
       setNewSubTaskTitle('')
       inputRef.current?.focus()
     } catch {
@@ -391,8 +406,7 @@ function SubTaskList({ task }: { task: Task }): React.JSX.Element {
 
   const handleToggleSubTask = async (subTaskId: string, completed: boolean): Promise<void> => {
     try {
-      await updateSubTask(subTaskId, { completed })
-      await refreshTasks()
+      await updateSubTaskMut.mutateAsync({ id: subTaskId, data: { completed } })
     } catch {
       // Error handled by global handler
     }
@@ -403,8 +417,7 @@ function SubTaskList({ task }: { task: Task }): React.JSX.Element {
     data: Record<string, unknown>
   ): Promise<void> => {
     try {
-      await updateSubTask(subTaskId, data)
-      await refreshTasks()
+      await updateSubTaskMut.mutateAsync({ id: subTaskId, data })
     } catch {
       // Error handled by global handler
     }
@@ -412,8 +425,7 @@ function SubTaskList({ task }: { task: Task }): React.JSX.Element {
 
   const handleDeleteSubTask = async (subTaskId: string): Promise<void> => {
     try {
-      await deleteSubTask(subTaskId)
-      await refreshTasks()
+      await deleteSubTaskMut.mutateAsync(subTaskId)
     } catch {
       // Error handled by global handler
     }
@@ -743,16 +755,19 @@ function ReminderSettings({
 // ============================================================
 
 function TagSelector({ task }: { task: Task }): React.JSX.Element {
-  const { state, addTagToTask, removeTagFromTask, createTag } = useApp()
+  const { data: allTags = [] } = useTagsQuery()
+  const addTagToTaskMut = useAddTagToTask()
+  const removeTagFromTaskMut = useRemoveTagFromTask()
+  const createTagMut = useCreateTag()
   const [isOpen, setIsOpen] = useState(false)
   const [newTagName, setNewTagName] = useState('')
 
   const taskTagIds = (task.tags ?? []).map((t) => t.id)
-  const availableTags = state.tags.filter((t) => !taskTagIds.includes(t.id))
+  const availableTags = allTags.filter((t) => !taskTagIds.includes(t.id))
 
   const handleAddTag = async (tagId: string): Promise<void> => {
     try {
-      await addTagToTask(task.id, tagId)
+      await addTagToTaskMut.mutateAsync({ taskId: task.id, tagId })
     } catch {
       // Error handled globally
     }
@@ -760,7 +775,7 @@ function TagSelector({ task }: { task: Task }): React.JSX.Element {
 
   const handleRemoveTag = async (tagId: string): Promise<void> => {
     try {
-      await removeTagFromTask(task.id, tagId)
+      await removeTagFromTaskMut.mutateAsync({ taskId: task.id, tagId })
     } catch {
       // Error handled globally
     }
@@ -770,8 +785,8 @@ function TagSelector({ task }: { task: Task }): React.JSX.Element {
     const trimmed = newTagName.trim()
     if (!trimmed) return
     try {
-      const tag = await createTag(trimmed)
-      await addTagToTask(task.id, tag.id)
+      const tag = await createTagMut.mutateAsync({ name: trimmed })
+      await addTagToTaskMut.mutateAsync({ taskId: task.id, tagId: tag.id })
       setNewTagName('')
     } catch {
       // Error handled globally
@@ -883,8 +898,12 @@ function TagSelector({ task }: { task: Task }): React.JSX.Element {
 // ============================================================
 
 export function TaskDetail(): React.JSX.Element {
-  const { state, updateTask, deleteTask, dispatch } = useApp()
-  const { selectedTaskId, tasks, categories } = state
+  const selectedTaskId = useUIStore((s) => s.selectedTaskId)
+  const selectTask = useUIStore((s) => s.selectTask)
+  const { data: tasks = [] } = useTasksQuery()
+  const { data: categories = [] } = useCategoriesQuery()
+  const updateTaskMut = useUpdateTask()
+  const deleteTaskMut = useDeleteTask()
 
   const task = tasks.find((t) => t.id === selectedTaskId) ?? null
 
@@ -914,7 +933,7 @@ export function TaskDetail(): React.JSX.Element {
     async (value: string) => {
       if (!task || !value.trim()) return
       try {
-        await updateTask(task.id, { title: value.trim() })
+        await updateTaskMut.mutateAsync({ id: task.id, data: { title: value.trim() } })
       } catch {
         // Error handled globally
       }
@@ -926,7 +945,7 @@ export function TaskDetail(): React.JSX.Element {
     async (value: string) => {
       if (!task) return
       try {
-        await updateTask(task.id, { description: value || null })
+        await updateTaskMut.mutateAsync({ id: task.id, data: { description: value || null } })
       } catch {
         // Error handled globally
       }
@@ -949,7 +968,7 @@ export function TaskDetail(): React.JSX.Element {
   const handlePriorityChange = async (priority: string): Promise<void> => {
     if (!task) return
     try {
-      await updateTask(task.id, { priority: priority as Priority })
+      await updateTaskMut.mutateAsync({ id: task.id, data: { priority: priority as Priority } })
     } catch {
       // Error handled globally
     }
@@ -958,8 +977,9 @@ export function TaskDetail(): React.JSX.Element {
   const handleCategoryChange = async (categoryId: string): Promise<void> => {
     if (!task) return
     try {
-      await updateTask(task.id, {
-        categoryId: categoryId === 'none' ? null : categoryId,
+      await updateTaskMut.mutateAsync({
+        id: task.id,
+        data: { categoryId: categoryId === 'none' ? null : categoryId },
       })
     } catch {
       // Error handled globally
@@ -969,8 +989,9 @@ export function TaskDetail(): React.JSX.Element {
   const handleDueDateChange = async (date: Date | undefined): Promise<void> => {
     if (!task) return
     try {
-      await updateTask(task.id, {
-        dueDate: date ? format(date, 'yyyy-MM-dd') : null,
+      await updateTaskMut.mutateAsync({
+        id: task.id,
+        data: { dueDate: date ? format(date, 'yyyy-MM-dd') : null },
       })
     } catch {
       // Error handled globally
@@ -980,7 +1001,7 @@ export function TaskDetail(): React.JSX.Element {
   const handleRecurrenceChange = async (rule: RecurrenceRule | null): Promise<void> => {
     if (!task) return
     try {
-      await updateTask(task.id, { recurrenceRule: rule })
+      await updateTaskMut.mutateAsync({ id: task.id, data: { recurrenceRule: rule } })
     } catch {
       // Error handled globally
     }
@@ -989,7 +1010,7 @@ export function TaskDetail(): React.JSX.Element {
   const handleReminderChange = async (time: string | null): Promise<void> => {
     if (!task) return
     try {
-      await updateTask(task.id, { reminderTime: time })
+      await updateTaskMut.mutateAsync({ id: task.id, data: { reminderTime: time } })
     } catch {
       // Error handled globally
     }
@@ -998,8 +1019,8 @@ export function TaskDetail(): React.JSX.Element {
   const handleDelete = async (): Promise<void> => {
     if (!task) return
     try {
-      await deleteTask(task.id)
-      dispatch({ type: 'SELECT_TASK', payload: null })
+      await deleteTaskMut.mutateAsync(task.id)
+      selectTask(null)
     } catch {
       // Error handled globally
     }

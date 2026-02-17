@@ -11,6 +11,7 @@ export const IPC_CHANNELS = {
   TASK_GET_ALL: 'task:getAll',
   TASK_GET_BY_ID: 'task:getById',
   TASK_COMPLETE: 'task:complete',
+  TASK_REORDER: 'task:reorder',
 
   // Sub-task operations
   SUBTASK_CREATE: 'subtask:create',
