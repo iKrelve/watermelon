@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
@@ -22,16 +23,17 @@ import { CheckCircle2, ListTodo, TrendingUp, Target } from 'lucide-react'
 
 type StatsPeriod = 'day' | 'week' | 'month'
 
-const PERIOD_LABELS: Record<StatsPeriod, string> = {
-  day: '今日',
-  week: '本周',
-  month: '本月',
+const PERIOD_KEYS: Record<StatsPeriod, string> = {
+  day: 'statistics.periodDay',
+  week: 'statistics.periodWeek',
+  month: 'statistics.periodMonth',
 }
 
 /**
  * Statistics view - Shows task completion stats and trends.
  */
 export function Statistics() {
+  const { t } = useTranslation()
   const [period, setPeriod] = useState<StatsPeriod>('week')
   const { data: stats, isLoading: statsLoading } = useStatsQuery(period)
   const { data: trend = [], isLoading: trendLoading } = useDailyTrendQuery(30)
@@ -82,9 +84,9 @@ export function Statistics() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">统计</h1>
+          <h1 className="text-2xl font-bold">{t('statistics.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            查看任务完成情况和趋势
+            {t('statistics.subtitle')}
           </p>
         </div>
         <Select
@@ -95,9 +97,9 @@ export function Statistics() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="day">今日</SelectItem>
-            <SelectItem value="week">本周</SelectItem>
-            <SelectItem value="month">本月</SelectItem>
+            <SelectItem value="day">{t('statistics.periodDay')}</SelectItem>
+            <SelectItem value="week">{t('statistics.periodWeek')}</SelectItem>
+            <SelectItem value="month">{t('statistics.periodMonth')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -107,33 +109,33 @@ export function Statistics() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground">
-              总任务数
+              {t('statistics.totalTasks')}
             </CardTitle>
             <ListTodo className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats?.totalTasks ?? 0}</p>
-            <p className="text-xs text-muted-foreground">{PERIOD_LABELS[period]}</p>
+            <p className="text-xs text-muted-foreground">{t(PERIOD_KEYS[period])}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground">
-              已完成
+              {t('statistics.completed')}
             </CardTitle>
             <CheckCircle2 className="size-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats?.completedTasks ?? 0}</p>
-            <p className="text-xs text-muted-foreground">{PERIOD_LABELS[period]}</p>
+            <p className="text-xs text-muted-foreground">{t(PERIOD_KEYS[period])}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground">
-              完成率
+              {t('statistics.completionRate')}
             </CardTitle>
             <Target className="size-4 text-blue-500" />
           </CardHeader>
@@ -151,7 +153,7 @@ export function Statistics() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-medium text-muted-foreground">
-              待完成
+              {t('statistics.pending')}
             </CardTitle>
             <TrendingUp className="size-4 text-orange-500" />
           </CardHeader>
@@ -159,7 +161,7 @@ export function Statistics() {
             <p className="text-2xl font-bold">
               {(stats?.totalTasks ?? 0) - (stats?.completedTasks ?? 0)}
             </p>
-            <p className="text-xs text-muted-foreground">剩余任务</p>
+            <p className="text-xs text-muted-foreground">{t('statistics.remaining')}</p>
           </CardContent>
         </Card>
       </div>
@@ -168,13 +170,13 @@ export function Statistics() {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-medium">
-            过去 30 天趋势
+            {t('statistics.trendTitle')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {trend.length === 0 ? (
             <div className="flex h-[250px] items-center justify-center text-sm text-muted-foreground">
-              暂无数据
+              {t('statistics.noData')}
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={250}>
@@ -206,12 +208,11 @@ export function Statistics() {
                 />
                 <Tooltip
                   labelFormatter={(v: string) => {
-                    const d = new Date(v)
-                    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
+                    return new Date(v).toLocaleDateString()
                   }}
                   formatter={(value: number, name: string) => [
                     value,
-                    name === 'completed' ? '完成' : '创建',
+                    name === 'completed' ? t('statistics.completedLabel') : t('statistics.created'),
                   ]}
                   contentStyle={{
                     backgroundColor: 'var(--color-popover)',
@@ -242,11 +243,11 @@ export function Statistics() {
           <div className="flex items-center justify-center gap-6 mt-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="size-2.5 rounded-full bg-emerald-500" />
-              已完成
+              {t('statistics.completed')}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="size-2.5 rounded-full bg-blue-500" />
-              已创建
+              {t('statistics.created')}
             </div>
           </div>
         </CardContent>

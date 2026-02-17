@@ -38,6 +38,7 @@ import { useTheme } from '@/components/ThemeProvider'
 import { filterToday, filterUpcoming } from '@/utils/date-filters'
 import { CategoryDialog } from '@/components/CategoryDialog'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ListTodo,
   CalendarDays,
@@ -63,6 +64,14 @@ interface SmartFilterItem {
   label: string
   icon: React.ReactNode
   getBadge?: (tasks: import('../../../shared/types').Task[]) => number
+}
+
+const smartFilterKeys: Record<string, string> = {
+  all: 'sidebar.all',
+  today: 'sidebar.today',
+  upcoming: 'sidebar.upcoming',
+  completed: 'sidebar.completed',
+  calendar: 'sidebar.calendar',
 }
 
 const smartFilters: SmartFilterItem[] = [
@@ -98,6 +107,7 @@ const smartFilters: SmartFilterItem[] = [
 ]
 
 export function AppSidebar(): React.JSX.Element {
+  const { t } = useTranslation()
   const filterView = useUIStore((s) => s.filterView)
   const filterCategoryId = useUIStore((s) => s.filterCategoryId)
   const filterTagIds = useUIStore((s) => s.filterTagIds)
@@ -247,10 +257,10 @@ export function AppSidebar(): React.JSX.Element {
                       <SidebarMenuButton
                         isActive={isActive}
                         onClick={() => handleFilterClick(filter.id)}
-                        tooltip={filter.label}
+                        tooltip={t(smartFilterKeys[filter.id] ?? filter.label)}
                       >
                         {filter.icon}
-                        <span>{filter.label}</span>
+                        <span>{t(smartFilterKeys[filter.id] ?? filter.label)}</span>
                       </SidebarMenuButton>
                       {badge !== undefined && badge > 0 && (
                         <SidebarMenuBadge>{badge}</SidebarMenuBadge>
@@ -268,11 +278,11 @@ export function AppSidebar(): React.JSX.Element {
               <SidebarGroupLabel asChild>
                 <CollapsibleTrigger className="flex w-full items-center">
                   <FolderOpen className="mr-2 size-4" />
-                  <span>分类</span>
+                  <span>{t('sidebar.categories')}</span>
                   <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                 </CollapsibleTrigger>
               </SidebarGroupLabel>
-              <SidebarGroupAction onClick={handleAddCategory} title="添加分类" aria-label="添加分类">
+              <SidebarGroupAction onClick={handleAddCategory} title={t('sidebar.addCategory')} aria-label={t('sidebar.addCategory')}>
                 <Plus className="size-4" />
               </SidebarGroupAction>
               <CollapsibleContent>
@@ -281,7 +291,7 @@ export function AppSidebar(): React.JSX.Element {
                     {categories.length === 0 ? (
                       <SidebarMenuItem>
                         <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                          暂无分类
+                          {t('sidebar.noCategories')}
                         </div>
                       </SidebarMenuItem>
                     ) : (
@@ -324,14 +334,14 @@ export function AppSidebar(): React.JSX.Element {
                                   }
                                 >
                                   <Pencil className="mr-2 size-4" />
-                                  编辑
+                                  {t('sidebar.edit')}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
                                   onClick={() => handleDeleteCategory(category.id)}
                                 >
                                   <Trash2 className="mr-2 size-4" />
-                                  删除
+                                  {t('sidebar.delete')}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -351,7 +361,7 @@ export function AppSidebar(): React.JSX.Element {
               <SidebarGroupLabel asChild>
                 <CollapsibleTrigger className="flex w-full items-center">
                   <Tag className="mr-2 size-4" />
-                  <span>标签</span>
+                  <span>{t('sidebar.tags')}</span>
                   <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                 </CollapsibleTrigger>
               </SidebarGroupLabel>
@@ -361,7 +371,7 @@ export function AppSidebar(): React.JSX.Element {
                     {tags.length === 0 ? (
                       <SidebarMenuItem>
                         <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                          暂无标签
+                          {t('sidebar.noTags')}
                         </div>
                       </SidebarMenuItem>
                     ) : (
@@ -400,25 +410,25 @@ export function AppSidebar(): React.JSX.Element {
               <SidebarMenuButton
                 isActive={filterView === 'stats'}
                 onClick={() => handleFilterClick('stats')}
-                tooltip="统计"
+                tooltip={t('sidebar.statistics')}
               >
                 <BarChart3 className="size-4" />
-                <span>统计</span>
+                <span>{t('sidebar.statistics')}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => toggleCompactMode()}
-                tooltip="简洁模式 (⌘\)"
+                tooltip={t('sidebar.compactMode') + ' (⌘\)'}
               >
                 <Minimize2 className="size-4" />
-                <span>简洁模式</span>
+                <span>{t('sidebar.compactMode')}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton tooltip="切换主题">
+                  <SidebarMenuButton tooltip={t('sidebar.theme')}>
                     {theme === 'dark' ? (
                       <Moon className="size-4" />
                     ) : theme === 'light' ? (
@@ -426,23 +436,23 @@ export function AppSidebar(): React.JSX.Element {
                     ) : (
                       <Monitor className="size-4" />
                     )}
-                    <span>主题</span>
+                    <span>{t('sidebar.theme')}</span>
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="right" align="end">
                   <DropdownMenuItem onClick={() => setTheme('light')}>
                     <Sun className="mr-2 size-4" />
-                    亮色
+                    {t('sidebar.themeLight')}
                     {theme === 'light' && <span className="ml-auto text-xs">✓</span>}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setTheme('dark')}>
                     <Moon className="mr-2 size-4" />
-                    暗色
+                    {t('sidebar.themeDark')}
                     {theme === 'dark' && <span className="ml-auto text-xs">✓</span>}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setTheme('system')}>
                     <Monitor className="mr-2 size-4" />
-                    跟随系统
+                    {t('sidebar.themeSystem')}
                     {theme === 'system' && <span className="ml-auto text-xs">✓</span>}
                   </DropdownMenuItem>
                 </DropdownMenuContent>

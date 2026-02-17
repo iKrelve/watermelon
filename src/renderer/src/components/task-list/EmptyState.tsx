@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import {
   Inbox,
@@ -10,39 +11,22 @@ import {
   Plus,
 } from 'lucide-react'
 
-const EMPTY_STATE_CONFIG: Record<
-  string,
-  { icon: React.ReactNode; text: string; hint?: string; showAddButton?: boolean }
-> = {
-  all: {
-    icon: <Inbox className="size-10 text-muted-foreground/30" />,
-    text: '任务列表是空的',
-    hint: '在上方输入框中创建你的第一个任务',
-    showAddButton: true,
-  },
-  today: {
-    icon: <Sun className="size-10 text-muted-foreground/30" />,
-    text: '今天没有待办任务',
-    hint: '享受轻松的一天吧',
-  },
-  upcoming: {
-    icon: <CalendarRange className="size-10 text-muted-foreground/30" />,
-    text: '未来 7 天没有安排',
-  },
-  completed: {
-    icon: <CheckCircle2 className="size-10 text-muted-foreground/30" />,
-    text: '还没有已完成的任务',
-  },
-  category: {
-    icon: <FolderOpen className="size-10 text-muted-foreground/30" />,
-    text: '该分类下没有任务',
-    hint: '在上方输入框中添加任务到该分类',
-    showAddButton: true,
-  },
-  tag: {
-    icon: <Tag className="size-10 text-muted-foreground/30" />,
-    text: '该标签下没有任务',
-  },
+const EMPTY_STATE_ICONS: Record<string, React.ReactNode> = {
+  all: <Inbox className="size-10 text-muted-foreground/30" />,
+  today: <Sun className="size-10 text-muted-foreground/30" />,
+  upcoming: <CalendarRange className="size-10 text-muted-foreground/30" />,
+  completed: <CheckCircle2 className="size-10 text-muted-foreground/30" />,
+  category: <FolderOpen className="size-10 text-muted-foreground/30" />,
+  tag: <Tag className="size-10 text-muted-foreground/30" />,
+}
+
+const EMPTY_STATE_KEYS: Record<string, { title: string; hint?: string; showAddButton?: boolean }> = {
+  all: { title: 'emptyState.allTitle', hint: 'emptyState.allHint', showAddButton: true },
+  today: { title: 'emptyState.todayTitle', hint: 'emptyState.todayHint' },
+  upcoming: { title: 'emptyState.upcomingTitle' },
+  completed: { title: 'emptyState.completedTitle' },
+  category: { title: 'emptyState.categoryTitle', hint: 'emptyState.categoryHint', showAddButton: true },
+  tag: { title: 'emptyState.tagTitle' },
 }
 
 export function EmptyState({
@@ -52,17 +36,19 @@ export function EmptyState({
   filterView: string
   onAddTask?: () => void
 }): React.JSX.Element {
-  const config = EMPTY_STATE_CONFIG[filterView] ?? {
-    icon: <ClipboardList className="size-10 text-muted-foreground/30" />,
-    text: '没有找到匹配的任务',
-  }
+  const { t } = useTranslation()
+
+  const icon = EMPTY_STATE_ICONS[filterView] ?? (
+    <ClipboardList className="size-10 text-muted-foreground/30" />
+  )
+  const config = EMPTY_STATE_KEYS[filterView] ?? { title: 'emptyState.searchTitle' }
 
   return (
     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-      <div className="mb-4">{config.icon}</div>
-      <p className="text-sm font-medium text-muted-foreground/70">{config.text}</p>
+      <div className="mb-4">{icon}</div>
+      <p className="text-sm font-medium text-muted-foreground/70">{t(config.title)}</p>
       {config.hint && (
-        <p className="mt-1.5 text-xs text-muted-foreground/50">{config.hint}</p>
+        <p className="mt-1.5 text-xs text-muted-foreground/50">{t(config.hint)}</p>
       )}
       {config.showAddButton && onAddTask && (
         <Button
@@ -72,10 +58,10 @@ export function EmptyState({
           onClick={onAddTask}
         >
           <Plus className="size-3.5" />
-          创建任务
+          {t('emptyState.createTask')}
         </Button>
       )}
-      <p className="text-[11px] mt-3 text-muted-foreground/30">Cmd+N 快速创建</p>
+      <p className="text-[11px] mt-3 text-muted-foreground/30">{t('emptyState.quickCreate')}</p>
     </div>
   )
 }

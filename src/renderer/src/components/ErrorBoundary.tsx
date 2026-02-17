@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
+import i18n from '@/i18n'
 
 interface Props {
   children: ReactNode
@@ -34,14 +35,14 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex h-screen items-center justify-center bg-background">
           <div className="text-center max-w-md px-6">
             <p className="text-4xl mb-4">😵</p>
-            <h2 className="text-lg font-semibold mb-2">出了点问题</h2>
+            <h2 className="text-lg font-semibold mb-2">{i18n.t('error.title')}</h2>
             <p className="text-sm text-muted-foreground mb-4">
-              {this.state.error?.message || '应用遇到了一个未知错误'}
+              {this.state.error?.message || i18n.t('error.unknownMessage')}
             </p>
             <div className="flex justify-center gap-3">
-              <Button onClick={this.handleRetry}>重试</Button>
+              <Button onClick={this.handleRetry}>{i18n.t('error.retry')}</Button>
               <Button variant="outline" onClick={() => window.location.reload()}>
-                刷新页面
+                {i18n.t('error.reload')}
               </Button>
             </div>
           </div>

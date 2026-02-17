@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useUIStore } from '@/stores/ui-store'
@@ -7,6 +8,7 @@ import { Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function AddTaskBar(): React.JSX.Element | null {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [isFocused, setIsFocused] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -30,7 +32,6 @@ export function AddTaskBar(): React.JSX.Element | null {
             : undefined,
       })
       setTitle('')
-      // Auto-select the newly created task so user can immediately edit details
       selectTask(task.id)
       inputRef.current?.focus()
     } catch {
@@ -51,7 +52,6 @@ export function AddTaskBar(): React.JSX.Element | null {
     }
   }
 
-  // Don't show AddTaskBar in completed view
   if (filterView === 'completed') return null
 
   return (
@@ -79,7 +79,7 @@ export function AddTaskBar(): React.JSX.Element | null {
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="添加新任务，按 Enter 确认"
+          placeholder={t('addTask.placeholder')}
           data-shortcut-target="add-task"
           className="h-8 border-none shadow-none focus-visible:ring-0 px-0 text-[13px] placeholder:text-muted-foreground/50"
           disabled={isSubmitting}
@@ -91,7 +91,7 @@ export function AddTaskBar(): React.JSX.Element | null {
             className="size-6 shrink-0 text-muted-foreground hover:text-primary"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            aria-label="添加任务"
+            aria-label={t('addTask.button')}
           >
             <Plus className="size-3.5" />
           </Button>

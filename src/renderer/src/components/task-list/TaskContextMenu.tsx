@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -12,11 +13,11 @@ import { Trash2, Flag, CheckCheck, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Priority } from '../../../../shared/types'
 
-const PRIORITY_OPTIONS: { value: Priority; label: string; color: string }[] = [
-  { value: 'high', label: '高', color: 'text-red-500' },
-  { value: 'medium', label: '中', color: 'text-amber-500' },
-  { value: 'low', label: '低', color: 'text-blue-500' },
-  { value: 'none', label: '无', color: 'text-muted-foreground' },
+const PRIORITY_OPTIONS: { value: Priority; color: string }[] = [
+  { value: 'high', color: 'text-red-500' },
+  { value: 'medium', color: 'text-amber-500' },
+  { value: 'low', color: 'text-blue-500' },
+  { value: 'none', color: 'text-muted-foreground' },
 ]
 
 export function TaskContextMenu({
@@ -34,6 +35,7 @@ export function TaskContextMenu({
   onBatchSetPriority: (priority: Priority) => void
   onClearSelection: () => void
 }): React.JSX.Element {
+  const { t } = useTranslation()
   const count = selectedIds.size
 
   return (
@@ -42,17 +44,17 @@ export function TaskContextMenu({
       <ContextMenuContent className="w-48">
         {count > 0 && (
           <div className="px-2 py-1.5 text-xs text-muted-foreground font-medium">
-            已选择 {count} 个任务
+            {t('contextMenu.selectedCount', { count })}
           </div>
         )}
         <ContextMenuItem onClick={onBatchComplete} disabled={count === 0}>
           <CheckCheck className="mr-2 size-4" />
-          批量完成
+          {t('contextMenu.batchComplete')}
         </ContextMenuItem>
         <ContextMenuSub>
           <ContextMenuSubTrigger disabled={count === 0}>
             <Flag className="mr-2 size-4" />
-            设置优先级
+            {t('contextMenu.setPriority')}
           </ContextMenuSubTrigger>
           <ContextMenuSubContent className="w-36">
             {PRIORITY_OPTIONS.map((opt) => (
@@ -61,7 +63,7 @@ export function TaskContextMenu({
                 onClick={() => onBatchSetPriority(opt.value)}
               >
                 <Flag className={cn('mr-2 size-4', opt.color)} />
-                {opt.label}
+                {t(`priority.${opt.value}`)}
               </ContextMenuItem>
             ))}
           </ContextMenuSubContent>
@@ -73,14 +75,14 @@ export function TaskContextMenu({
           className="text-destructive focus:text-destructive"
         >
           <Trash2 className="mr-2 size-4" />
-          批量删除
+          {t('contextMenu.batchDelete')}
         </ContextMenuItem>
         {count > 0 && (
           <>
             <ContextMenuSeparator />
             <ContextMenuItem onClick={onClearSelection}>
               <X className="mr-2 size-4" />
-              取消选择
+              {t('contextMenu.clearSelection')}
             </ContextMenuItem>
           </>
         )}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -46,6 +47,7 @@ export function TaskItemContent({
   handleToggleSubTask: (id: string, completed: boolean) => void
   dragHandleProps?: Record<string, unknown>
 }): React.JSX.Element {
+  const { t } = useTranslation()
   const overdue = isOverdue(task)
   const isCompleted = task.status === 'completed'
   const subTaskCount = subTasks.length
@@ -55,13 +57,15 @@ export function TaskItemContent({
     ? format(parseISO(task.dueDate), 'M月d日', { locale: zhCN })
     : null
 
+  const ariaLabel = `${t('task.ariaLabel', { title: task.title })}${isCompleted ? t('task.completedSuffix') : ''}${overdue ? t('task.overdueSuffix') : ''}`
+
   return (
     <div className={cn('animate-list-enter', isDragging && 'opacity-50')}>
       {/* Main task row */}
       <div
         role="button"
         tabIndex={0}
-        aria-label={`任务: ${task.title}${isCompleted ? ' (已完成)' : ''}${overdue ? ' (已过期)' : ''}`}
+        aria-label={ariaLabel}
         onClick={handleSelect}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -104,7 +108,7 @@ export function TaskItemContent({
           <Checkbox
             checked={isCompleted}
             onCheckedChange={handleComplete}
-            aria-label={isCompleted ? '标记为未完成' : '标记为完成'}
+            aria-label={isCompleted ? t('task.markIncomplete') : t('task.markComplete')}
             className={cn(
               'size-[18px] rounded-full transition-colors',
               task.priority === 'high' && 'border-red-400 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500',
@@ -126,9 +130,8 @@ export function TaskItemContent({
             {task.title}
           </p>
 
-          {/* Meta row — only show most important indicators */}
+          {/* Meta row */}
           <div className="flex items-center gap-2 mt-1">
-            {/* Due date */}
             {formattedDueDate && (
               <span
                 className={cn(
@@ -144,11 +147,10 @@ export function TaskItemContent({
                   <CalendarDays className="size-3" />
                 )}
                 {formattedDueDate}
-                {overdue && !isCompleted && ' 已过期'}
+                {overdue && !isCompleted && ` ${t('task.overdue')}`}
               </span>
             )}
 
-            {/* Priority badge — always visible with colored background */}
             {task.priority !== 'none' && (
               <Badge
                 variant="secondary"
@@ -161,7 +163,6 @@ export function TaskItemContent({
               </Badge>
             )}
 
-            {/* Sub-task expand toggle */}
             {subTaskCount > 0 && (
               <button
                 type="button"
@@ -171,7 +172,7 @@ export function TaskItemContent({
                   'hover:text-foreground transition-colors rounded px-1 -ml-1',
                   expanded && 'text-foreground'
                 )}
-                aria-label={expanded ? '收起子任务' : '展开子任务'}
+                aria-label={expanded ? t('task.collapseSubtasks') : t('task.expandSubtasks')}
               >
                 {expanded ? (
                   <ChevronDown className="size-3" />
@@ -183,12 +184,10 @@ export function TaskItemContent({
               </button>
             )}
 
-            {/* Recurrence indicator */}
             {task.recurrenceRule && (
               <Repeat className="size-3 text-muted-foreground" />
             )}
 
-            {/* Tags — show only color dots to save space */}
             {task.tags && task.tags.length > 0 && (
               <div className="flex items-center gap-0.5 ml-auto">
                 {task.tags.slice(0, 3).map((tag) => (

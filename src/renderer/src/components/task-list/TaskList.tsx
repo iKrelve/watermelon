@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   DndContext,
   closestCenter,
@@ -39,6 +40,7 @@ import { EmptyState } from './EmptyState'
 import { TaskContextMenu } from './TaskContextMenu'
 
 export function TaskList(): React.JSX.Element {
+  const { t } = useTranslation()
   const selectedTaskId = useUIStore((s) => s.selectedTaskId)
   const selectTask = useUIStore((s) => s.selectTask)
   const filterView = useUIStore((s) => s.filterView)
@@ -76,6 +78,7 @@ export function TaskList(): React.JSX.Element {
     (filterView === 'all' || filterView === 'category')
 
   const title = getFilterTitle(
+    t,
     filterView,
     categories,
     filterCategoryId,
@@ -257,10 +260,10 @@ export function TaskList(): React.JSX.Element {
         <div className="min-w-0">
           <h2 className="text-base font-semibold tracking-tight truncate">{title}</h2>
           <p className="text-[11px] text-muted-foreground/70 mt-0.5">
-            {sortedTasks.length} 个任务
+            {t('filter.taskCount', { count: sortedTasks.length })}
             {selectedIds.size > 0 && (
               <span className="ml-1 text-primary font-medium">
-                · 已选 {selectedIds.size}
+                · {t('filter.selectedCount', { count: selectedIds.size })}
               </span>
             )}
           </p>

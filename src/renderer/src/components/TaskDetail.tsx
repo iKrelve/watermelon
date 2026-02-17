@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/RichTextEditor'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -123,6 +125,7 @@ function SubTaskItem({
   onUpdate: (id: string, data: Record<string, unknown>) => void
   onDelete: (id: string) => void
 }): React.JSX.Element {
+  const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
   const [description, setDescription] = useState(subTask.description ?? '')
   const [dueDateOpen, setDueDateOpen] = useState(false)
@@ -245,7 +248,7 @@ function SubTaskItem({
           type="button"
           onClick={() => setExpanded(!expanded)}
           className="shrink-0 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-          aria-label={expanded ? '收起详情' : '展开详情'}
+          aria-label={expanded ? t('taskDetail.collapseDetail') : t('taskDetail.expandDetail')}
         >
           {expanded ? (
             <ChevronDown className="size-3.5" />
@@ -256,7 +259,7 @@ function SubTaskItem({
 
         {/* Delete button */}
         <button
-          aria-label={`删除子任务: ${subTask.title}`}
+          aria-label={t('taskDetail.deleteSubtask', { title: subTask.title })}
           onClick={() => onDelete(subTask.id)}
           className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
         >
@@ -292,7 +295,7 @@ function SubTaskItem({
                   />
                   {subTask.priority !== 'none'
                     ? getPriorityLabel(subTask.priority)
-                    : '优先级'}
+                    : t('priority.label')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-32 p-1" align="start">
@@ -307,7 +310,7 @@ function SubTaskItem({
                   >
                     <Flag className={cn('size-3', getPriorityColor(p))} />
                     <span className="flex-1">
-                      {p === 'none' ? '无' : getPriorityLabel(p)}
+                      {p === 'none' ? t('priority.none') : getPriorityLabel(p)}
                     </span>
                     {p !== 'none' && (
                       <span
@@ -337,7 +340,7 @@ function SubTaskItem({
                   )}
                 >
                   <CalendarDays className="size-3" />
-                  {formattedDueDate ?? '截止日期'}
+                  {formattedDueDate ?? t('taskDetail.dueDateLabel')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -356,7 +359,7 @@ function SubTaskItem({
                       onClick={() => handleDueDateChange(undefined)}
                     >
                       <X className="size-3 mr-1" />
-                      清除日期
+                      {t('taskDetail.clearDate')}
                     </Button>
                   </div>
                 )}
@@ -368,7 +371,7 @@ function SubTaskItem({
           <Textarea
             value={description}
             onChange={handleDescriptionChange}
-            placeholder="添加备注..."
+            placeholder={t('taskDetail.descriptionPlaceholder')}
             className="min-h-[60px] text-xs resize-none border-dashed"
           />
         </div>
@@ -382,7 +385,8 @@ function SubTaskItem({
 // ============================================================
 
 function SubTaskList({ task }: { task: Task }): React.JSX.Element {
-const createSubTaskMut = useCreateSubTask()
+  const { t } = useTranslation()
+  const createSubTaskMut = useCreateSubTask()
   const updateSubTaskMut = useUpdateSubTask()
   const deleteSubTaskMut = useDeleteSubTask()
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('')
@@ -435,7 +439,7 @@ const createSubTaskMut = useCreateSubTask()
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          子任务
+          {t('taskDetail.subtasksLabel')}
         </h4>
         {subTasks.length > 0 && (
           <span className="text-xs text-muted-foreground">
@@ -470,7 +474,7 @@ const createSubTaskMut = useCreateSubTask()
               handleAddSubTask()
             }
           }}
-          placeholder="添加子任务..."
+          placeholder={t('taskDetail.addSubtaskPlaceholder')}
           className="h-7 border-none shadow-none focus-visible:ring-0 px-0 text-sm"
         />
       </div>
@@ -479,7 +483,7 @@ const createSubTaskMut = useCreateSubTask()
       {subTasks.length > 0 && completedCount === subTasks.length && (
         <div className="flex items-center gap-1.5 text-xs text-emerald-600">
           <CheckCircle2 className="size-3.5" />
-          所有子任务已完成
+          {t('taskDetail.allSubtasksDone')}
         </div>
       )}
     </div>
@@ -490,14 +494,12 @@ const createSubTaskMut = useCreateSubTask()
 // RecurrenceSettings component
 // ============================================================
 
-const RECURRENCE_TYPE_LABELS: Record<RecurrenceType, string> = {
-  daily: '每天',
-  weekly: '每周',
-  monthly: '每月',
-  custom: '自定义',
+const RECURRENCE_TYPE_KEYS: Record<RecurrenceType, string> = {
+  daily: 'recurrence.daily',
+  weekly: 'recurrence.weekly',
+  monthly: 'recurrence.monthly',
+  custom: 'recurrence.custom',
 }
-
-const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
 
 function RecurrenceSettings({
   recurrenceRule,
@@ -506,6 +508,8 @@ function RecurrenceSettings({
   recurrenceRule: RecurrenceRule | null
   onChange: (rule: RecurrenceRule | null) => void
 }): React.JSX.Element {
+  const { t } = useTranslation()
+  const weekdayLabels = t('calendar.weekdays', { returnObjects: true }) as string[]
   const [isOpen, setIsOpen] = useState(false)
 
   const handleTypeChange = (type: string): void => {
@@ -552,14 +556,14 @@ function RecurrenceSettings({
             >
               <Repeat className="size-3.5" />
               {recurrenceRule
-                ? `${RECURRENCE_TYPE_LABELS[recurrenceRule.type]}${
+                ? `${t(RECURRENCE_TYPE_KEYS[recurrenceRule.type])}${
                     recurrenceRule.interval > 1 ? ` ×${recurrenceRule.interval}` : ''
                   }`
                 : null}
             </Button>
           </PopoverTrigger>
         </TooltipTrigger>
-        <TooltipContent>重复</TooltipContent>
+        <TooltipContent>{t('recurrence.tooltip')}</TooltipContent>
       </Tooltip>
       <PopoverContent className="w-64 p-3" align="start">
         <div className="space-y-3">
@@ -571,11 +575,11 @@ function RecurrenceSettings({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">不重复</SelectItem>
-              <SelectItem value="daily">每天</SelectItem>
-              <SelectItem value="weekly">每周</SelectItem>
-              <SelectItem value="monthly">每月</SelectItem>
-              <SelectItem value="custom">自定义</SelectItem>
+              <SelectItem value="none">{t('recurrence.none')}</SelectItem>
+              <SelectItem value="daily">{t('recurrence.daily')}</SelectItem>
+              <SelectItem value="weekly">{t('recurrence.weekly')}</SelectItem>
+              <SelectItem value="monthly">{t('recurrence.monthly')}</SelectItem>
+              <SelectItem value="custom">{t('recurrence.custom')}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -583,7 +587,7 @@ function RecurrenceSettings({
             <>
               {/* Interval */}
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground shrink-0">每</span>
+                <span className="text-xs text-muted-foreground shrink-0">{t('recurrence.every')}</span>
                 <Input
                   type="number"
                   min={1}
@@ -594,19 +598,19 @@ function RecurrenceSettings({
                 />
                 <span className="text-xs text-muted-foreground">
                   {recurrenceRule.type === 'daily'
-                    ? '天'
+                    ? t('recurrence.dayUnit')
                     : recurrenceRule.type === 'weekly'
-                      ? '周'
+                      ? t('recurrence.weekUnit')
                       : recurrenceRule.type === 'monthly'
-                        ? '月'
-                        : '次'}
+                        ? t('recurrence.monthUnit')
+                        : t('recurrence.timesUnit')}
                 </span>
               </div>
 
               {/* Weekly - day selector */}
               {recurrenceRule.type === 'weekly' && (
                 <div className="flex gap-1">
-                  {WEEKDAY_LABELS.map((label, index) => (
+                  {weekdayLabels.map((label, index) => (
                     <button
                       key={index}
                       onClick={() => toggleWeekday(index)}
@@ -626,7 +630,7 @@ function RecurrenceSettings({
               {/* Monthly - day of month */}
               {recurrenceRule.type === 'monthly' && (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">每月第</span>
+                  <span className="text-xs text-muted-foreground">{t('recurrence.monthDay')}</span>
                   <Input
                     type="number"
                     min={1}
@@ -640,7 +644,7 @@ function RecurrenceSettings({
                     }
                     className="h-7 w-16 text-sm text-center"
                   />
-                  <span className="text-xs text-muted-foreground">天</span>
+                  <span className="text-xs text-muted-foreground">{t('recurrence.monthDaySuffix')}</span>
                 </div>
               )}
             </>
@@ -662,6 +666,7 @@ function ReminderSettings({
   reminderTime: string | null
   onChange: (time: string | null) => void
 }): React.JSX.Element {
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const currentDate = reminderTime ? parseISO(reminderTime) : null
 
@@ -715,7 +720,7 @@ function ReminderSettings({
             </Button>
           </PopoverTrigger>
         </TooltipTrigger>
-        <TooltipContent>提醒</TooltipContent>
+        <TooltipContent>{t('reminder.tooltip')}</TooltipContent>
       </Tooltip>
       <PopoverContent className="w-auto p-3" align="start">
         <div className="space-y-3">
@@ -740,7 +745,7 @@ function ReminderSettings({
                 className="h-7 text-xs text-destructive"
                 onClick={handleClear}
               >
-                清除
+                {t('reminder.clear')}
               </Button>
             )}
           </div>
@@ -755,6 +760,7 @@ function ReminderSettings({
 // ============================================================
 
 function TagSelector({ task }: { task: Task }): React.JSX.Element {
+  const { t } = useTranslation()
   const { data: allTags = [] } = useTagsQuery()
   const addTagToTaskMut = useAddTagToTask()
   const removeTagFromTaskMut = useRemoveTagFromTask()
@@ -813,7 +819,7 @@ function TagSelector({ task }: { task: Task }): React.JSX.Element {
             </Button>
           </PopoverTrigger>
         </TooltipTrigger>
-        <TooltipContent>标签</TooltipContent>
+        <TooltipContent>{t('taskDetail.tagsLabel')}</TooltipContent>
       </Tooltip>
       <PopoverContent className="w-56 p-2" align="start">
         <div className="space-y-2">
@@ -874,7 +880,7 @@ function TagSelector({ task }: { task: Task }): React.JSX.Element {
                   handleCreateAndAdd()
                 }
               }}
-              placeholder="新建标签..."
+              placeholder={t('taskDetail.newTagPlaceholder')}
               className="h-7 text-xs"
             />
             <Button
@@ -898,6 +904,7 @@ function TagSelector({ task }: { task: Task }): React.JSX.Element {
 // ============================================================
 
 export function TaskDetail(): React.JSX.Element {
+  const { t } = useTranslation()
   const selectedTaskId = useUIStore((s) => s.selectedTaskId)
   const selectTask = useUIStore((s) => s.selectTask)
   const { data: tasks = [] } = useTasksQuery()
@@ -959,10 +966,9 @@ export function TaskDetail(): React.JSX.Element {
     debouncedUpdateTitle(val)
   }
 
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
-    const val = e.target.value
-    setDescription(val)
-    debouncedUpdateDescription(val)
+  const handleRichTextChange = (html: string): void => {
+    setDescription(html)
+    debouncedUpdateDescription(html)
   }
 
   const handlePriorityChange = async (priority: string): Promise<void> => {
@@ -1031,8 +1037,8 @@ export function TaskDetail(): React.JSX.Element {
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center text-center">
           <ClipboardList className="size-12 text-muted-foreground/20 mb-3" />
-          <p className="text-sm font-medium text-muted-foreground/50">选择一个任务查看详情</p>
-          <p className="mt-1 text-xs text-muted-foreground/40">或按 Cmd+N 创建新任务</p>
+          <p className="text-sm font-medium text-muted-foreground/50">{t('taskDetail.selectTaskHint')}</p>
+          <p className="mt-1 text-xs text-muted-foreground/40">{t('taskDetail.quickCreateHint')}</p>
         </div>
       </div>
     )
@@ -1053,7 +1059,7 @@ export function TaskDetail(): React.JSX.Element {
             value={title}
             onChange={handleTitleChange}
             className="text-lg font-semibold border-none shadow-none focus-visible:ring-0 px-0 h-auto hover:bg-accent/30 rounded-md transition-colors -ml-1 pl-1"
-            placeholder="任务标题"
+            placeholder={t('taskDetail.titlePlaceholder')}
           />
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -1061,25 +1067,25 @@ export function TaskDetail(): React.JSX.Element {
                 variant="ghost"
                 size="icon"
                 className="size-8 text-muted-foreground hover:text-destructive shrink-0"
-                aria-label="删除任务"
+                aria-label={t('taskDetail.deleteTask')}
               >
                 <Trash2 className="size-4" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>确认删除</AlertDialogTitle>
+                <AlertDialogTitle>{t('taskDetail.confirmDeleteTitle')}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  确定要删除任务「{task.title}」吗？此操作不可撤销，子任务也会一并删除。
+                  {t('taskDetail.confirmDeleteMessage', { title: task.title })}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogCancel>{t('taskDetail.cancel')}</AlertDialogCancel>
                 <AlertDialogAction
                   onClick={handleDelete}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
-                  删除
+                  {t('taskDetail.delete')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -1090,7 +1096,7 @@ export function TaskDetail(): React.JSX.Element {
         {task.status === 'completed' && (
           <Badge variant="secondary" className="gap-1">
             <CheckCircle2 className="size-3" />
-            已完成
+            {t('taskDetail.completedBadge')}
             {task.completedAt && (
               <span className="text-muted-foreground">
                 · {format(parseISO(task.completedAt), 'M月d日', { locale: zhCN })}
@@ -1099,12 +1105,11 @@ export function TaskDetail(): React.JSX.Element {
           </Badge>
         )}
 
-        {/* Description (always visible, part of core editing experience) */}
-        <Textarea
-          value={description}
-          onChange={handleDescriptionChange}
-          placeholder="添加备注..."
-          className="min-h-[80px] resize-none border-muted/60 text-sm focus:border-primary/30 transition-colors"
+        {/* Description (always visible, rich text editor) */}
+        <RichTextEditor
+          content={description}
+          onChange={handleRichTextChange}
+          placeholder={t('taskDetail.descriptionPlaceholder')}
         />
 
         {/* ===== Section 2: Quick Property Toolbar (compact icon buttons) ===== */}
@@ -1128,15 +1133,15 @@ export function TaskDetail(): React.JSX.Element {
                       <Flag className={cn('size-3.5', task.priority === 'none' ? 'text-muted-foreground' : 'currentColor')} />
                       {task.priority !== 'none' ? (
                         <span>
-                          {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}
+                          {task.priority === 'high' ? t('priority.high') : task.priority === 'medium' ? t('priority.medium') : t('priority.low')}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">优先级</span>
+                        <span className="text-muted-foreground">{t('priority.label')}</span>
                       )}
                     </Button>
                   </PopoverTrigger>
                 </TooltipTrigger>
-                <TooltipContent>优先级</TooltipContent>
+                <TooltipContent>{t('priority.label')}</TooltipContent>
               </Tooltip>
               <PopoverContent className="w-36 p-1" align="start">
                 {(['none', 'low', 'medium', 'high'] as const).map((p) => (
@@ -1150,7 +1155,7 @@ export function TaskDetail(): React.JSX.Element {
                   >
                     <Flag className={cn('size-3.5', getPriorityColor(p))} />
                     <span className="flex-1">
-                      {p === 'none' ? '无' : p === 'low' ? '低' : p === 'medium' ? '中' : '高'}
+                      {p === 'none' ? t('priority.none') : p === 'low' ? t('priority.low') : p === 'medium' ? t('priority.medium') : t('priority.high')}
                     </span>
                     {p !== 'none' && (
                       <span
@@ -1187,7 +1192,7 @@ export function TaskDetail(): React.JSX.Element {
                     </Button>
                   </PopoverTrigger>
                 </TooltipTrigger>
-                <TooltipContent>截止日期</TooltipContent>
+                <TooltipContent>{t('taskDetail.dueDateLabel')}</TooltipContent>
               </Tooltip>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
@@ -1204,7 +1209,7 @@ export function TaskDetail(): React.JSX.Element {
                       className="h-7 text-xs text-destructive w-full"
                       onClick={() => handleDueDateChange(undefined)}
                     >
-                      清除日期
+                      {t('taskDetail.clearDate')}
                     </Button>
                   </div>
                 )}
@@ -1231,7 +1236,7 @@ export function TaskDetail(): React.JSX.Element {
                     </Button>
                   </PopoverTrigger>
                 </TooltipTrigger>
-                <TooltipContent>分类</TooltipContent>
+                <TooltipContent>{t('taskDetail.categoryLabel')}</TooltipContent>
               </Tooltip>
               <PopoverContent className="w-44 p-1" align="start">
                 <button
@@ -1241,7 +1246,7 @@ export function TaskDetail(): React.JSX.Element {
                     !task.categoryId && 'bg-accent font-medium'
                   )}
                 >
-                  无分类
+                  {t('taskDetail.noCategory')}
                 </button>
                 {categories.map((cat) => (
                   <button
@@ -1286,7 +1291,7 @@ export function TaskDetail(): React.JSX.Element {
           <CollapsibleTrigger className="flex w-full items-center gap-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors group">
             <ChevronRight className="size-3.5 transition-transform duration-200 group-data-[state=open]:rotate-90" />
             <ListChecks className="size-3.5" />
-            <span>子任务</span>
+            <span>{t('taskDetail.subtasksLabel')}</span>
             {hasSubTasks && (
               <span className="text-muted-foreground/60">
                 {subTasks.filter((s) => s.completed).length}/{subTasks.length}
@@ -1302,8 +1307,8 @@ export function TaskDetail(): React.JSX.Element {
 
         {/* Footer metadata */}
         <div className="pt-4 pb-2 text-[11px] text-muted-foreground/40 space-y-0.5">
-          <p>创建于 {format(parseISO(task.createdAt), 'yyyy年M月d日 HH:mm', { locale: zhCN })}</p>
-          <p>更新于 {format(parseISO(task.updatedAt), 'yyyy年M月d日 HH:mm', { locale: zhCN })}</p>
+          <p>{t('taskDetail.createdAt', { date: format(parseISO(task.createdAt), 'yyyy-MM-dd HH:mm') })}</p>
+          <p>{t('taskDetail.updatedAt', { date: format(parseISO(task.updatedAt), 'yyyy-MM-dd HH:mm') })}</p>
         </div>
       </div>
     </ScrollArea>

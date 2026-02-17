@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUIStore } from '@/stores/ui-store'
 import { useTasksQuery } from '@/hooks/useDataQueries'
 import { Badge } from '@/components/ui/badge'
@@ -71,8 +72,6 @@ function groupTasksByDate(tasks: Task[]): Map<string, Task[]> {
 // CalendarGrid — Month view
 // ============================================================
 
-const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
-
 function CalendarGrid({
   currentMonth,
   tasksByDate,
@@ -84,6 +83,8 @@ function CalendarGrid({
   selectedDate: Date | null
   onSelectDate: (date: Date) => void
 }): React.JSX.Element {
+  const { t } = useTranslation()
+  const weekdayLabels = t('calendar.weekdays', { returnObjects: true }) as string[]
   const days = useMemo((): DayCell[] => {
     const monthStart = startOfMonth(currentMonth)
     const monthEnd = endOfMonth(currentMonth)
@@ -102,7 +103,7 @@ function CalendarGrid({
     <div className="select-none">
       {/* Weekday headers */}
       <div className="grid grid-cols-7 mb-1">
-        {WEEKDAY_LABELS.map((label) => (
+        {weekdayLabels.map((label) => (
           <div
             key={label}
             className="text-center text-[11px] font-medium text-muted-foreground py-2"
@@ -218,7 +219,7 @@ function CalendarGrid({
                       ))}
                       {day.tasks.length > 5 && (
                         <li className="text-xs text-muted-foreground">
-                          还有 {day.tasks.length - 5} 个任务...
+                          {t('calendar.moreTasks', { count: day.tasks.length - 5 })}
                         </li>
                       )}
                     </ul>
@@ -246,8 +247,9 @@ function DayDetail({
   tasks: Task[]
   onSelectTask: (taskId: string) => void
 }): React.JSX.Element {
-  const todoTasks = tasks.filter((t) => t.status === 'todo')
-  const completedTasks = tasks.filter((t) => t.status === 'completed')
+  const { t } = useTranslation()
+  const todoTasks = tasks.filter((tk) => tk.status === 'todo')
+  const completedTasks = tasks.filter((tk) => tk.status === 'completed')
 
   return (
     <div className="flex flex-col gap-3">
@@ -257,13 +259,13 @@ function DayDetail({
           {format(date, 'M月d日 EEEE', { locale: zhCN })}
         </h3>
         <Badge variant="secondary" className="text-[10px] px-1.5 h-4">
-          {tasks.length} 个任务
+          {t('calendar.taskCount', { count: tasks.length })}
         </Badge>
       </div>
 
       {tasks.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">
-          当天没有任务安排
+          {t('calendar.noTasks')}
         </p>
       ) : (
         <div className="space-y-1">
@@ -320,7 +322,7 @@ function DayDetail({
           {completedTasks.length > 0 && (
             <>
               <div className="text-[11px] text-muted-foreground font-medium px-3 pt-2">
-                已完成 ({completedTasks.length})
+                {t('calendar.completedCount', { count: completedTasks.length })}
               </div>
               {completedTasks.map((task) => (
                 <button
@@ -350,6 +352,7 @@ function DayDetail({
 // ============================================================
 
 export function CalendarView(): React.JSX.Element {
+  const { t } = useTranslation()
   const setFilterView = useUIStore((s) => s.setFilterView)
   const selectTask = useUIStore((s) => s.selectTask)
   const { data: tasks = [] } = useTasksQuery()
@@ -425,16 +428,16 @@ export function CalendarView(): React.JSX.Element {
           </h2>
           <div className="flex items-center gap-3 mt-1">
             <span className="text-[11px] text-muted-foreground">
-              共 {monthStats.total} 个任务
+              {t('calendar.monthTotal', { count: monthStats.total })}
             </span>
             {monthStats.completed > 0 && (
               <span className="text-[11px] text-green-600">
-                ✓ 已完成 {monthStats.completed}
+                {t('calendar.monthCompleted', { count: monthStats.completed })}
               </span>
             )}
             {monthStats.overdue > 0 && (
               <span className="text-[11px] text-destructive">
-                ⚠ 已过期 {monthStats.overdue}
+                {t('calendar.monthOverdue', { count: monthStats.overdue })}
               </span>
             )}
           </div>
@@ -447,14 +450,14 @@ export function CalendarView(): React.JSX.Element {
             onClick={handleToday}
             className="text-xs h-7 px-2.5"
           >
-            今天
+            {t('calendar.today')}
           </Button>
           <Button
             variant="ghost"
             size="icon"
             className="size-7"
             onClick={handlePrevMonth}
-            aria-label="上一个月"
+            aria-label={t('calendar.previousMonth')}
           >
             <ChevronLeft className="size-4" />
           </Button>
@@ -463,7 +466,7 @@ export function CalendarView(): React.JSX.Element {
             size="icon"
             className="size-7"
             onClick={handleNextMonth}
-            aria-label="下一个月"
+            aria-label={t('calendar.nextMonth')}
           >
             <ChevronRight className="size-4" />
           </Button>
