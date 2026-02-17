@@ -73,11 +73,12 @@ import { cn } from '@/lib/utils'
 // Debounced update hook
 // ============================================================
 
-function useDebouncedCallback<T extends (...args: unknown[]) => void>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function useDebouncedCallback<T extends (...args: any[]) => void>(
   callback: T,
   delay: number
 ): T {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>()
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
 
   useEffect(() => {
     return () => {
@@ -367,7 +368,7 @@ function SubTaskItem({
 // SubTaskList component
 // ============================================================
 
-function SubTaskList({ task }: { task: Task }) {
+function SubTaskList({ task }: { task: Task }): React.JSX.Element {
   const { createSubTask, updateSubTask, deleteSubTask, refreshTasks } = useApp()
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -881,23 +882,32 @@ function TagSelector({ task }: { task: Task }): React.JSX.Element {
 // TaskDetail (main export)
 // ============================================================
 
-export function TaskDetail() {
+export function TaskDetail(): React.JSX.Element {
   const { state, updateTask, deleteTask, dispatch } = useApp()
   const { selectedTaskId, tasks, categories } = state
 
   const task = tasks.find((t) => t.id === selectedTaskId) ?? null
 
+  // Extract primitive values for stable dependency tracking.
+  // Using primitives (instead of the `task` object reference) prevents the
+  // effect from re-running on unrelated task-object mutations (e.g. when
+  // a debounced save updates the store and creates a new object reference).
+  const taskId = task?.id
+  const taskTitle = task?.title
+  const taskDescription = task?.description
+
   // Local edit state
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
 
-  // Sync local state when task changes
+  // Sync local state when the selected task changes or its persisted
+  // title/description are updated from elsewhere (e.g. another window).
   useEffect(() => {
-    if (task) {
-      setTitle(task.title)
-      setDescription(task.description ?? '')
+    if (taskId != null) {
+      setTitle(taskTitle ?? '')
+      setDescription(taskDescription ?? '')
     }
-  }, [task?.id, task?.title, task?.description])
+  }, [taskId, taskTitle, taskDescription])
 
   // Debounced save for title and description
   const debouncedUpdateTitle = useDebouncedCallback(
@@ -924,19 +934,19 @@ export function TaskDetail() {
     500
   )
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const val = e.target.value
     setTitle(val)
     debouncedUpdateTitle(val)
   }
 
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
     const val = e.target.value
     setDescription(val)
     debouncedUpdateDescription(val)
   }
 
-  const handlePriorityChange = async (priority: string) => {
+  const handlePriorityChange = async (priority: string): Promise<void> => {
     if (!task) return
     try {
       await updateTask(task.id, { priority: priority as Priority })
@@ -945,7 +955,7 @@ export function TaskDetail() {
     }
   }
 
-  const handleCategoryChange = async (categoryId: string) => {
+  const handleCategoryChange = async (categoryId: string): Promise<void> => {
     if (!task) return
     try {
       await updateTask(task.id, {
@@ -956,7 +966,7 @@ export function TaskDetail() {
     }
   }
 
-  const handleDueDateChange = async (date: Date | undefined) => {
+  const handleDueDateChange = async (date: Date | undefined): Promise<void> => {
     if (!task) return
     try {
       await updateTask(task.id, {
@@ -967,7 +977,7 @@ export function TaskDetail() {
     }
   }
 
-  const handleRecurrenceChange = async (rule: RecurrenceRule | null) => {
+  const handleRecurrenceChange = async (rule: RecurrenceRule | null): Promise<void> => {
     if (!task) return
     try {
       await updateTask(task.id, { recurrenceRule: rule })
@@ -976,7 +986,7 @@ export function TaskDetail() {
     }
   }
 
-  const handleReminderChange = async (time: string | null) => {
+  const handleReminderChange = async (time: string | null): Promise<void> => {
     if (!task) return
     try {
       await updateTask(task.id, { reminderTime: time })
@@ -985,7 +995,7 @@ export function TaskDetail() {
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     if (!task) return
     try {
       await deleteTask(task.id)
