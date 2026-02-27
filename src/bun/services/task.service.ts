@@ -193,6 +193,30 @@ export class TaskService {
   }
 
   /**
+   * Mark a completed task as incomplete (revert to todo).
+   */
+  uncomplete(id: string): Task {
+    const existing = this.db.select().from(tasks).where(eq(tasks.id, id)).get()
+    if (!existing) {
+      throw new AppException('NOT_FOUND', 'Task not found')
+    }
+
+    const now = new Date().toISOString()
+
+    this.db
+      .update(tasks)
+      .set({
+        status: 'todo',
+        completedAt: null,
+        updatedAt: now,
+      })
+      .where(eq(tasks.id, id))
+      .run()
+
+    return this.getById(id)!
+  }
+
+  /**
    * Mark a task as complete.
    * If the task has a recurrence rule, create a new task instance for the next occurrence.
    * Returns the completed task (and optionally the new recurring instance).

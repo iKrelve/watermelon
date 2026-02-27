@@ -53,6 +53,10 @@ export type WatermelonRPC = {
         params: { id: string }
         response: ApiResult<{ completedTask: Task; nextTask?: Task }>
       }
+      uncompleteTask: {
+        params: { id: string }
+        response: ApiResult<Task>
+      }
       reorderTasks: {
         params: { items: ReorderTaskItem[] }
         response: ApiResult<void>

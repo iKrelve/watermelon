@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import { useUIStore } from '@/stores/ui-store'
-import { useTasksQuery, useDeleteTask, useCompleteTask } from '@/hooks/useDataQueries'
+import { useTasksQuery, useDeleteTask, useCompleteTask, useUncompleteTask } from '@/hooks/useDataQueries'
 import { useFilteredTasks } from '@/components/task-list/hooks/useFilteredTasks'
 
 /**
@@ -31,6 +31,7 @@ export function useKeyboardShortcuts(): void {
   const filteredTasks = useFilteredTasks()
   const deleteTaskMut = useDeleteTask()
   const completeTaskMut = useCompleteTask()
+  const uncompleteTaskMut = useUncompleteTask()
 
   const handleKeyDown = useCallback(
     async (e: KeyboardEvent) => {
@@ -111,13 +112,17 @@ export function useKeyboardShortcuts(): void {
         return
       }
 
-      // Enter: Complete selected task
+      // Enter: Toggle task completion
       if (e.key === 'Enter') {
         e.preventDefault()
         const task = tasks.find((t) => t.id === selectedTaskId)
-        if (task && task.status === 'todo') {
+        if (task) {
           try {
-            await completeTaskMut.mutateAsync(selectedTaskId)
+            if (task.status === 'todo') {
+              await completeTaskMut.mutateAsync(selectedTaskId)
+            } else if (task.status === 'completed') {
+              await uncompleteTaskMut.mutateAsync(selectedTaskId)
+            }
           } catch {
             // Error handled globally
           }
@@ -146,7 +151,7 @@ export function useKeyboardShortcuts(): void {
         return
       }
     },
-    [selectedTaskId, tasks, filteredTasks, selectTask, setSearchQuery, toggleCompactMode, toggleCommandPalette, deleteTaskMut, completeTaskMut]
+    [selectedTaskId, tasks, filteredTasks, selectTask, setSearchQuery, toggleCompactMode, toggleCommandPalette, deleteTaskMut, completeTaskMut, uncompleteTaskMut]
   )
 
   useEffect(() => {

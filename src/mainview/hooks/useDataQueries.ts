@@ -168,6 +168,38 @@ export function useCompleteTask(): UseMutationResult<
   })
 }
 
+export function useUncompleteTask(): UseMutationResult<Task, Error, string> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const result = await window.api.uncompleteTask(id)
+      return unwrap(result)
+    },
+    // Optimistic update: immediately mark as todo in UI
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.tasks })
+      const previousTasks = queryClient.getQueryData<Task[]>(queryKeys.tasks)
+
+      queryClient.setQueryData<Task[]>(queryKeys.tasks, (old) =>
+        old?.map((t) =>
+          t.id === id
+            ? { ...t, status: 'todo' as const, completedAt: null }
+            : t
+        )
+      )
+      return { previousTasks }
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(queryKeys.tasks, context.previousTasks)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
+    },
+  })
+}
+
 export function useReorderTasks(): UseMutationResult<void, Error, ReorderTaskItem[]> {
   const queryClient = useQueryClient()
   return useMutation({

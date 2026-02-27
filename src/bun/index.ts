@@ -137,6 +137,9 @@ const watermelonRPC = BrowserView.defineRPC<WatermelonRPC>({
           return result
         })
       },
+      uncompleteTask: ({ id }) => {
+        return handleSync(() => taskService.uncomplete(id))
+      },
       reorderTasks: ({ items }) => {
         return handleSync(() => taskService.reorder(items))
       },
