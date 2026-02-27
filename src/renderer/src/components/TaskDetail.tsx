@@ -129,6 +129,14 @@ function SubTaskItem({
   const [expanded, setExpanded] = useState(false)
   const [description, setDescription] = useState(subTask.description ?? '')
   const [dueDateOpen, setDueDateOpen] = useState(false)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleValue, setTitleValue] = useState(subTask.title)
+  const titleInputRef = useRef<HTMLInputElement>(null)
+
+  // Sync local title when subTask changes externally
+  useEffect(() => {
+    setTitleValue(subTask.title)
+  }, [subTask.title])
 
   // Sync local description when subTask changes externally
   useEffect(() => {
@@ -198,50 +206,87 @@ function SubTaskItem({
         />
 
         {/* Title + meta indicators */}
-        <button
-          type="button"
-          onClick={() => setExpanded(!expanded)}
-          className="flex-1 min-w-0 flex items-center gap-1.5 text-left"
-        >
-          <span
+        {editingTitle ? (
+          <input
+            ref={titleInputRef}
+            value={titleValue}
+            onChange={(e) => setTitleValue(e.target.value)}
+            onBlur={() => {
+              setEditingTitle(false)
+              const trimmed = titleValue.trim()
+              if (trimmed && trimmed !== subTask.title) {
+                onUpdate(subTask.id, { title: trimmed })
+              } else {
+                setTitleValue(subTask.title)
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                ;(e.target as HTMLInputElement).blur()
+              }
+              if (e.key === 'Escape') {
+                setTitleValue(subTask.title)
+                setEditingTitle(false)
+              }
+            }}
             className={cn(
-              'text-sm truncate',
+              'flex-1 min-w-0 bg-transparent text-sm outline-none border-none',
+              'ring-1 ring-primary/30 rounded px-1 -mx-1',
               subTask.completed && 'line-through text-muted-foreground'
             )}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            onDoubleClick={(e) => {
+              e.stopPropagation()
+              setEditingTitle(true)
+              setTimeout(() => titleInputRef.current?.focus(), 0)
+            }}
+            className="flex-1 min-w-0 flex items-center gap-1.5 text-left"
           >
-            {subTask.title}
-          </span>
+            <span
+              className={cn(
+                'text-sm truncate',
+                subTask.completed && 'line-through text-muted-foreground'
+              )}
+            >
+              {subTask.title}
+            </span>
 
-          {/* Inline indicators when collapsed */}
-          {!expanded && (
-            <>
-              {subTask.priority !== 'none' && (
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    'text-[9px] px-1 py-0 h-3.5 border-0 font-medium shrink-0',
-                    getPriorityBadgeClasses(subTask.priority)
-                  )}
-                >
-                  {getPriorityLabel(subTask.priority)}
-                </Badge>
-              )}
-              {formattedDueDate && (
-                <span
-                  className={cn(
-                    'text-[10px] shrink-0',
-                    isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'
-                  )}
-                >
-                  {formattedDueDate}
-                </span>
-              )}
-              {subTask.description && (
-                <ClipboardList className="size-3 text-muted-foreground/50 shrink-0" />
-              )}
-            </>
-          )}
-        </button>
+            {/* Inline indicators when collapsed */}
+            {!expanded && (
+              <>
+                {subTask.priority !== 'none' && (
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      'text-[9px] px-1 py-0 h-3.5 border-0 font-medium shrink-0',
+                      getPriorityBadgeClasses(subTask.priority)
+                    )}
+                  >
+                    {getPriorityLabel(subTask.priority)}
+                  </Badge>
+                )}
+                {formattedDueDate && (
+                  <span
+                    className={cn(
+                      'text-[10px] shrink-0',
+                      isOverdue ? 'text-destructive font-medium' : 'text-muted-foreground'
+                    )}
+                  >
+                    {formattedDueDate}
+                  </span>
+                )}
+                {subTask.description && (
+                  <ClipboardList className="size-3 text-muted-foreground/50 shrink-0" />
+                )}
+              </>
+            )}
+          </button>
+        )}
 
         {/* Expand / collapse chevron */}
         <button
@@ -1107,6 +1152,7 @@ export function TaskDetail(): React.JSX.Element {
 
         {/* Description (always visible, rich text editor) */}
         <RichTextEditor
+          key={task.id}
           content={description}
           onChange={handleRichTextChange}
           placeholder={t('taskDetail.descriptionPlaceholder')}
