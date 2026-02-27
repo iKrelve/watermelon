@@ -79,7 +79,7 @@ const smartFilters: SmartFilterItem[] = [
     id: 'all',
     label: '全部',
     icon: <ListTodo className="size-4" />,
-    getBadge: (tasks) => tasks.filter((t) => t.status === 'todo').length,
+    getBadge: (tasks) => tasks.length,
   },
   {
     id: 'today',

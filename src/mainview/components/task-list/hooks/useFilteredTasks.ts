@@ -16,7 +16,7 @@ export function useFilteredTasks(): Task[] {
 
     switch (filterView) {
       case 'all':
-        filtered = tasks.filter((t) => t.status === 'todo')
+        filtered = tasks
         break
       case 'today':
         filtered = filterToday(tasks)
