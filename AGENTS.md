@@ -140,7 +140,7 @@ bun run test:watch   # Run tests in watch mode (vitest)
 ### Dev Workflow
 
 - **`bun run dev`** — 最常用的开发命令。Electrobun 的 `--watch` 模式会监听文件变化并自动重建 Bun 进程端代码。WebView 侧使用预构建的静态文件。
-- **`bun run dev:hmr`** — 如果需要前端热更新 (HMR)，使用此命令。它会同时启动 Vite dev server (端口 5173) 和 Electrobun，WebView 会自动连接到 Vite dev server。
+- **`bun run dev:hmr`** — 如果需要前端热更新 (HMR)，使用此命令。它会同时启动 Vite dev server (端口 6689) 和 Electrobun，WebView 会自动连接到 Vite dev server。
 - **`bun run start`** — 先执行 `vite build` 构建前端静态文件到 `dist/`，然后启动 Electrobun dev。适合需要测试完整构建流程时使用。
 
 ## Adding shadcn/ui Components
