@@ -143,7 +143,26 @@ export function useCompleteTask(): UseMutationResult<
       const result = await window.api.completeTask(id)
       return unwrap(result)
     },
-    onSuccess: () => {
+    // Optimistic update: immediately mark as completed in UI
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.tasks })
+      const previousTasks = queryClient.getQueryData<Task[]>(queryKeys.tasks)
+
+      queryClient.setQueryData<Task[]>(queryKeys.tasks, (old) =>
+        old?.map((t) =>
+          t.id === id
+            ? { ...t, status: 'completed' as const, completedAt: new Date().toISOString() }
+            : t
+        )
+      )
+      return { previousTasks }
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(queryKeys.tasks, context.previousTasks)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
     },
   })
@@ -156,7 +175,28 @@ export function useReorderTasks(): UseMutationResult<void, Error, ReorderTaskIte
       const result = await window.api.reorderTasks(items)
       unwrap(result)
     },
-    onSuccess: () => {
+    // Optimistic update: apply new sort order immediately in UI
+    onMutate: async (items: ReorderTaskItem[]) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.tasks })
+      const previousTasks = queryClient.getQueryData<Task[]>(queryKeys.tasks)
+
+      const orderMap = new Map(items.map((it) => [it.id, it.sortOrder]))
+      queryClient.setQueryData<Task[]>(queryKeys.tasks, (old) => {
+        if (!old) return old
+        const updated = old.map((t) => {
+          const newOrder = orderMap.get(t.id)
+          return newOrder !== undefined ? { ...t, sortOrder: newOrder } : t
+        })
+        return updated.sort((a, b) => a.sortOrder - b.sortOrder)
+      })
+      return { previousTasks }
+    },
+    onError: (_err, _items, context) => {
+      if (context?.previousTasks) {
+        queryClient.setQueryData(queryKeys.tasks, context.previousTasks)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
     },
   })

@@ -12,8 +12,8 @@
     "build": "vite build && electrobun build --env=canary",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "bun --bun vitest run",
+    "test:watch": "bun --bun vitest"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

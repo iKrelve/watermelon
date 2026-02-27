@@ -4,13 +4,8 @@
 // ============================================================
 
 import Electrobun, { Electroview } from 'electrobun/view'
-import type { RPCSchema } from 'electrobun/view'
 
 import type {
-  Task,
-  SubTask,
-  Category,
-  Tag,
   CreateTaskInput,
   UpdateTaskInput,
   CreateSubTaskInput,
@@ -18,77 +13,11 @@ import type {
   CreateCategoryInput,
   UpdateCategoryInput,
   TaskFilter,
-  StatsSummary,
-  DailyTrend,
-  AppError,
   ReorderTaskItem,
 } from '../shared/types'
+import type { WatermelonRPC } from '../shared/rpc-schema'
 
-// Mirror the RPC schema type for the webview side
-type ApiResult<T> = T | { __error: AppError }
-
-type WatermelonRPCView = {
-  bun: {
-    requests: {
-      createTask: { params: { data: CreateTaskInput }; response: ApiResult<Task> }
-      updateTask: { params: { id: string; data: UpdateTaskInput }; response: ApiResult<Task> }
-      deleteTask: { params: { id: string }; response: ApiResult<void> }
-      getTasks: { params: { filter?: TaskFilter }; response: ApiResult<Task[]> }
-      getTaskById: { params: { id: string }; response: ApiResult<Task | null> }
-      completeTask: {
-        params: { id: string }
-        response: ApiResult<{ completedTask: Task; nextTask?: Task }>
-      }
-      reorderTasks: { params: { items: ReorderTaskItem[] }; response: ApiResult<void> }
-      createSubTask: {
-        params: { taskId: string; data: CreateSubTaskInput }
-        response: ApiResult<SubTask>
-      }
-      updateSubTask: {
-        params: { id: string; data: UpdateSubTaskInput }
-        response: ApiResult<SubTask>
-      }
-      deleteSubTask: { params: { id: string }; response: ApiResult<void> }
-      createCategory: { params: { data: CreateCategoryInput }; response: ApiResult<Category> }
-      updateCategory: {
-        params: { id: string; data: UpdateCategoryInput }
-        response: ApiResult<Category>
-      }
-      deleteCategory: { params: { id: string }; response: ApiResult<void> }
-      getCategories: { params: {}; response: ApiResult<Category[]> }
-      createTag: { params: { name: string; color?: string }; response: ApiResult<Tag> }
-      updateTag: { params: { id: string; name: string; color?: string }; response: ApiResult<Tag> }
-      deleteTag: { params: { id: string }; response: ApiResult<void> }
-      getTags: { params: {}; response: ApiResult<Tag[]> }
-      addTagToTask: { params: { taskId: string; tagId: string }; response: ApiResult<void> }
-      removeTagFromTask: { params: { taskId: string; tagId: string }; response: ApiResult<void> }
-      searchTasks: {
-        params: { query?: string; filters?: TaskFilter }
-        response: ApiResult<Task[]>
-      }
-      scheduleNotification: {
-        params: { taskId: string; title: string; reminderTime: string }
-        response: ApiResult<void>
-      }
-      cancelNotification: { params: { taskId: string }; response: ApiResult<void> }
-      getStats: {
-        params: { period: 'day' | 'week' | 'month' }
-        response: ApiResult<StatsSummary>
-      }
-      getDailyTrend: { params: { days: number }; response: ApiResult<DailyTrend[]> }
-      exportData: { params: {}; response: ApiResult<string> }
-      importData: { params: { jsonStr: string }; response: ApiResult<void> }
-      setCompactMode: { params: { compact: boolean }; response: void }
-    }
-    messages: {}
-  }
-  webview: {
-    requests: {}
-    messages: {}
-  }
-}
-
-const rpc = Electroview.defineRPC<WatermelonRPCView>({
+const rpc = Electroview.defineRPC<WatermelonRPC>({
   maxRequestTime: 10000,
   handlers: { requests: {}, messages: {} },
 })

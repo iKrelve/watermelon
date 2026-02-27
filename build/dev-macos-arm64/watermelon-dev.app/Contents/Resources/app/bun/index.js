@@ -8712,6 +8712,25 @@ function v4(options, buf, offset) {
   return _v4(options, buf, offset);
 }
 var v4_default = v4;
+// src/shared/types.ts
+class AppException extends Error {
+  code;
+  details;
+  constructor(code, message, details) {
+    super(message);
+    this.name = "AppException";
+    this.code = code;
+    this.details = details;
+  }
+  toAppError() {
+    return {
+      code: this.code,
+      message: this.message,
+      ...this.details ? { details: this.details } : {}
+    };
+  }
+}
+
 // node_modules/date-fns/constants.js
 var daysInYear = 365.2425;
 var maxTime = Math.pow(10, 8) * 24 * 60 * 60 * 1000;
@@ -10325,7 +10344,7 @@ class TaskService {
   }
   validateTitle(title) {
     if (!title || title.trim().length === 0) {
-      throw new Error("VALIDATION_ERROR: Title must not be empty or whitespace-only");
+      throw new AppException("VALIDATION_ERROR", "Title must not be empty or whitespace-only");
     }
   }
   create(input) {
@@ -10404,7 +10423,7 @@ class TaskService {
     }
     const existing = this.db.select().from(tasks).where(eq(tasks.id, id)).get();
     if (!existing) {
-      throw new Error("NOT_FOUND: Task not found");
+      throw new AppException("NOT_FOUND", "Task not found");
     }
     const now = new Date().toISOString();
     const updates = { updatedAt: now };
@@ -10432,7 +10451,7 @@ class TaskService {
   complete(id) {
     const existing = this.db.select().from(tasks).where(eq(tasks.id, id)).get();
     if (!existing) {
-      throw new Error("NOT_FOUND: Task not found");
+      throw new AppException("NOT_FOUND", "Task not found");
     }
     const now = new Date().toISOString();
     this.db.update(tasks).set({
@@ -10465,7 +10484,7 @@ class TaskService {
     this.validateTitle(input.title);
     const parent = this.db.select().from(tasks).where(eq(tasks.id, taskId)).get();
     if (!parent) {
-      throw new Error("NOT_FOUND: Parent task not found");
+      throw new AppException("NOT_FOUND", "Parent task not found");
     }
     const id = v4_default();
     const now = new Date().toISOString();
@@ -10490,7 +10509,7 @@ class TaskService {
     }
     const existing = this.db.select().from(subTasks).where(eq(subTasks.id, id)).get();
     if (!existing) {
-      throw new Error("NOT_FOUND: Sub-task not found");
+      throw new AppException("NOT_FOUND", "Sub-task not found");
     }
     const updates = {};
     if (input.title !== undefined)
@@ -10564,11 +10583,11 @@ class CategoryService {
   }
   create(input) {
     if (!input.name || input.name.trim().length === 0) {
-      throw new Error("VALIDATION_ERROR: Category name must not be empty");
+      throw new AppException("VALIDATION_ERROR", "Category name must not be empty");
     }
     const existing = this.db.select().from(categories).where(eq(categories.name, input.name.trim())).get();
     if (existing) {
-      throw new Error("VALIDATION_ERROR: Category name already exists");
+      throw new AppException("VALIDATION_ERROR", "Category name already exists");
     }
     const id = v4_default();
     const now = new Date().toISOString();
@@ -10594,15 +10613,15 @@ class CategoryService {
   update(id, input) {
     const existing = this.db.select().from(categories).where(eq(categories.id, id)).get();
     if (!existing) {
-      throw new Error("NOT_FOUND: Category not found");
+      throw new AppException("NOT_FOUND", "Category not found");
     }
     if (input.name !== undefined) {
       if (!input.name || input.name.trim().length === 0) {
-        throw new Error("VALIDATION_ERROR: Category name must not be empty");
+        throw new AppException("VALIDATION_ERROR", "Category name must not be empty");
       }
       const dup = this.db.select().from(categories).where(eq(categories.name, input.name.trim())).get();
       if (dup && dup.id !== id) {
-        throw new Error("VALIDATION_ERROR: Category name already exists");
+        throw new AppException("VALIDATION_ERROR", "Category name already exists");
       }
     }
     const updates = {};
@@ -10642,11 +10661,11 @@ class TagService {
   }
   create(name, color) {
     if (!name || name.trim().length === 0) {
-      throw new Error("VALIDATION_ERROR: Tag name must not be empty");
+      throw new AppException("VALIDATION_ERROR", "Tag name must not be empty");
     }
     const existing = this.db.select().from(tags).where(eq(tags.name, name.trim())).get();
     if (existing) {
-      throw new Error("VALIDATION_ERROR: Tag name already exists");
+      throw new AppException("VALIDATION_ERROR", "Tag name already exists");
     }
     const id = v4_default();
     const now = new Date().toISOString();
@@ -10662,14 +10681,14 @@ class TagService {
   update(id, name, color) {
     const existing = this.db.select().from(tags).where(eq(tags.id, id)).get();
     if (!existing) {
-      throw new Error("NOT_FOUND: Tag not found");
+      throw new AppException("NOT_FOUND", "Tag not found");
     }
     if (!name || name.trim().length === 0) {
-      throw new Error("VALIDATION_ERROR: Tag name must not be empty");
+      throw new AppException("VALIDATION_ERROR", "Tag name must not be empty");
     }
     const duplicate = this.db.select().from(tags).where(and(eq(tags.name, name.trim()), sql`${tags.id} != ${id}`)).get();
     if (duplicate) {
-      throw new Error("VALIDATION_ERROR: Tag name already exists");
+      throw new AppException("VALIDATION_ERROR", "Tag name already exists");
     }
     const updates = { name: name.trim() };
     if (color !== undefined)
@@ -10947,10 +10966,10 @@ class DataService {
     try {
       data = JSON.parse(jsonStr);
     } catch {
-      throw new Error("VALIDATION_ERROR: Invalid JSON format");
+      throw new AppException("VALIDATION_ERROR", "Invalid JSON format");
     }
     if (!data.version || data.version !== 1) {
-      throw new Error("VALIDATION_ERROR: Unsupported export version");
+      throw new AppException("VALIDATION_ERROR", "Unsupported export version");
     }
     for (const cat of data.categories ?? []) {
       try {
@@ -10998,12 +11017,11 @@ var dataService = new DataService(db2);
 notificationService.checkMissedReminders();
 notificationService.scheduleAllFutureReminders();
 function wrapError(error) {
+  if (error instanceof AppException) {
+    return error.toAppError();
+  }
   if (error instanceof Error) {
-    const [code, ...messageParts] = error.message.split(": ");
-    return {
-      code: code || "UNKNOWN_ERROR",
-      message: messageParts.join(": ") || error.message
-    };
+    return { code: "UNKNOWN_ERROR", message: error.message };
   }
   return { code: "UNKNOWN_ERROR", message: String(error) };
 }

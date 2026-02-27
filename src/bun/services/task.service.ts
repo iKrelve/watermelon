@@ -1,4 +1,4 @@
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, and, sql, inArray } from 'drizzle-orm'
 import { v4 as uuidv4 } from 'uuid'
 import { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite'
 import { Database } from 'bun:sqlite'
@@ -41,11 +41,13 @@ export class TaskService {
     const id = uuidv4()
     const now = new Date().toISOString()
 
-    // Assign sort_order: new tasks get sortOrder 0, push existing tasks down
-    this.db
-      .update(tasks)
-      .set({ sortOrder: sql`${tasks.sortOrder} + 1` })
-      .run()
+    // Assign sort_order: new task gets min(sortOrder) - 1 (prepend to list).
+    // This avoids the O(N) full-table UPDATE that the previous approach used.
+    const minOrder = this.db
+      .select({ min: sql<number>`MIN(${tasks.sortOrder})` })
+      .from(tasks)
+      .get()
+    const newSortOrder = (minOrder?.min ?? 0) - 1
 
     const row = {
       id,
@@ -58,7 +60,7 @@ export class TaskService {
       reminderTime: input.reminderTime ?? null,
       recurrenceRule: input.recurrenceRule ? JSON.stringify(input.recurrenceRule) : null,
       completedAt: null,
-      sortOrder: 0,
+      sortOrder: newSortOrder,
       createdAt: now,
       updatedAt: now,
     }
@@ -117,10 +119,12 @@ export class TaskService {
     const taskList = rows.map((r) => rowToTask(r))
     if (taskList.length === 0) return taskList
 
-    // Batch-load all sub-tasks
+    // Batch-load sub-tasks scoped to current task set
+    const taskIds = taskList.map((t) => t.id)
     const allSubTasks = this.db
       .select()
       .from(subTasks)
+      .where(inArray(subTasks.taskId, taskIds))
       .orderBy(subTasks.sortOrder)
       .all()
     const subTasksByTaskId = new Map<string, typeof allSubTasks>()
@@ -130,11 +134,12 @@ export class TaskService {
       subTasksByTaskId.set(st.taskId, list)
     }
 
-    // Batch-load all task-tag associations
+    // Batch-load task-tag associations scoped to current task set
     const allTaskTags = this.db
       .select({ taskId: taskTags.taskId, tag: tags })
       .from(taskTags)
       .innerJoin(tags, eq(taskTags.tagId, tags.id))
+      .where(inArray(taskTags.taskId, taskIds))
       .all()
     const tagsByTaskId = new Map<string, { id: string; name: string; color: string | null; createdAt: string }[]>()
     for (const row of allTaskTags) {

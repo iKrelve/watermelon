@@ -140,41 +140,25 @@ export function TaskList(): React.JSX.Element {
     [sortedTasks, selectTask]
   )
 
-  // Batch operations
+  // Batch operations — run in parallel for better responsiveness
   const handleBatchDelete = useCallback(async (): Promise<void> => {
     const ids = Array.from(selectedIds)
-    for (const id of ids) {
-      try {
-        await deleteTaskMut.mutateAsync(id)
-      } catch {
-        // Error handled globally
-      }
-    }
+    await Promise.allSettled(ids.map((id) => deleteTaskMut.mutateAsync(id)))
     setSelectedIds(new Set())
   }, [selectedIds, deleteTaskMut])
 
   const handleBatchComplete = useCallback(async (): Promise<void> => {
     const ids = Array.from(selectedIds)
-    for (const id of ids) {
-      try {
-        await completeTaskMut.mutateAsync(id)
-      } catch {
-        // Error handled globally
-      }
-    }
+    await Promise.allSettled(ids.map((id) => completeTaskMut.mutateAsync(id)))
     setSelectedIds(new Set())
   }, [selectedIds, completeTaskMut])
 
   const handleBatchSetPriority = useCallback(
     async (priority: Priority): Promise<void> => {
       const ids = Array.from(selectedIds)
-      for (const id of ids) {
-        try {
-          await updateTaskMut.mutateAsync({ id, data: { priority } })
-        } catch {
-          // Error handled globally
-        }
-      }
+      await Promise.allSettled(
+        ids.map((id) => updateTaskMut.mutateAsync({ id, data: { priority } }))
+      )
     },
     [selectedIds, updateTaskMut]
   )

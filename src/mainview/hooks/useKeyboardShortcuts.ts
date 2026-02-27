@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react'
 import { useUIStore } from '@/stores/ui-store'
 import { useTasksQuery, useDeleteTask, useCompleteTask } from '@/hooks/useDataQueries'
+import { useFilteredTasks } from '@/components/task-list/hooks/useFilteredTasks'
 
 /**
  * Global keyboard shortcuts hook.
@@ -27,6 +28,7 @@ export function useKeyboardShortcuts(): void {
   const setSearchQuery = useUIStore((s) => s.setSearchQuery)
 
   const { data: tasks = [] } = useTasksQuery()
+  const filteredTasks = useFilteredTasks()
   const deleteTaskMut = useDeleteTask()
   const completeTaskMut = useCompleteTask()
 
@@ -126,11 +128,7 @@ export function useKeyboardShortcuts(): void {
       // Arrow Up/Down: Navigate tasks
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault()
-        const visibleTasks = tasks.filter(() => {
-          // Simple: use all tasks in current view, actual filtering happens at component level
-          // For keyboard nav, we just navigate through the task list order
-          return true
-        })
+        const visibleTasks = filteredTasks
         const currentIndex = visibleTasks.findIndex(
           (t) => t.id === selectedTaskId
         )
@@ -148,7 +146,7 @@ export function useKeyboardShortcuts(): void {
         return
       }
     },
-    [selectedTaskId, tasks, selectTask, setSearchQuery, toggleCompactMode, toggleCommandPalette, deleteTaskMut, completeTaskMut]
+    [selectedTaskId, tasks, filteredTasks, selectTask, setSearchQuery, toggleCompactMode, toggleCommandPalette, deleteTaskMut, completeTaskMut]
   )
 
   useEffect(() => {

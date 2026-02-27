@@ -51,7 +51,8 @@ export function initTestDatabase(): BunSQLiteDatabase<typeof schema> {
  */
 export function getDatabase(): BunSQLiteDatabase<typeof schema> {
   if (!db) {
-    throw new Error('Database not initialized. Call initDatabase() first.')
+    throw new Error('Database not initialized. Call initDatabase() first')
+
   }
   return db
 }
