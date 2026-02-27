@@ -28,7 +28,7 @@ Watermelon (小西瓜) 是一款面向 macOS 的极简 Todo 管理桌面应用�
 
 ```
 watermelon/
-├── electrobun.config.ts          # Electrobun build config (app metadata, bun entrypoint, copy rules)
+├── electrobun.config.ts          # Electrobun build config (app metadata, bun entrypoint, copy rules, scripts hooks)
 ├── vite.config.ts                # Vite config for mainview (React + Tailwind, output to dist/)
 ├── vitest.config.ts              # Vitest test configuration
 ├── drizzle.config.ts             # Drizzle Kit config (schema inspection)
@@ -37,6 +37,8 @@ watermelon/
 ├── tsconfig.json                 # Single unified TS config with path aliases
 ├── eslint.config.mjs             # ESLint v9 flat config
 ├── .prettierrc                   # Prettier rules
+├── scripts/
+│   └── post-build.ts            # postBuild hook: injects CFBundleDisplayName (小西瓜) into Info.plist
 ├── build/                        # App icons (icon.icns, icon.svg, icon_1024.png)
 ├── dist/                         # Vite build output (copied to Electrobun bundle by config)
 ├── src/
@@ -50,7 +52,7 @@ watermelon/
 │   │   │   ├── schema.ts         # Drizzle ORM schema (tasks, subTasks, categories, tags, taskTags)
 │   │   │   └── __tests__/        # DB roundtrip & transaction tests
 │   │   ├── services/
-│   │   │   ├── task.service.ts       # Task & sub-task CRUD, completion, recurrence
+│   │   │   ├── task.service.ts       # Task & sub-task CRUD, completion/uncompletion, recurrence
 │   │   │   ├── category.service.ts   # Category CRUD
 │   │   │   ├── tag.service.ts        # Tag CRUD, task-tag associations
 │   │   │   ├── search.service.ts     # Text search + filter (LIKE + AND conditions)
@@ -152,6 +154,12 @@ bunx --bun shadcn@latest add <component-name>
 Components are generated into `src/mainview/components/ui/` with `@/` import aliases. The `components/ui/` directory has relaxed ESLint rules (no `explicit-function-return-type`, no `react-refresh/only-export-components`) since these files are auto-generated.
 
 ## Architecture Conventions
+
+### App Naming
+
+- `electrobun.config.ts` 中 `app.name` **必须使用 ASCII 字符**（当前为 `'watermelon'`），因为 Bun.Archive 的 tar header 不支持非 ASCII 路径，中文名会导致 `ArchiveHeaderError`。
+- macOS 用户可见的显示名"小西瓜"通过 `scripts/post-build.ts` 注入 `CFBundleDisplayName` 到 `Info.plist` 实现。
+- 窗口标题在 `src/bun/index.ts` 的 `BrowserWindow({ title: '小西瓜' })` 中设置。
 
 ### Electrobun Process Model
 

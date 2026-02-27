@@ -6,6 +6,10 @@ export default {
     identifier: 'com.xiao-xigua.watermelon',
     version: '1.0.0',
   },
+  scripts: {
+    postBuild: 'scripts/post-build.ts',
+    postWrap: 'scripts/post-build.ts',
+  },
   build: {
     bun: {
       entrypoint: 'src/bun/index.ts',
