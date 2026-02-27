@@ -971,14 +971,29 @@ export function TaskDetail(): React.JSX.Element {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
 
-  // Sync local state when the selected task changes or its persisted
-  // title/description are updated from elsewhere (e.g. another window).
+  // Track the last-synced taskId so we can reset local state
+  // *during* the render pass (before the first paint) instead of
+  // waiting for a useEffect, which would cause the RichTextEditor
+  // to flash with stale content when switching tasks.
+  const prevTaskIdRef = useRef<string | null | undefined>(undefined)
+  if (prevTaskIdRef.current !== taskId) {
+    prevTaskIdRef.current = taskId
+    // Reset synchronously — React allows calling setState during render
+    // when the value is derived from changed props (avoids an extra
+    // commit with stale data).
+    const nextTitle = taskTitle ?? ''
+    const nextDescription = taskDescription ?? ''
+    if (title !== nextTitle) setTitle(nextTitle)
+    if (description !== nextDescription) setDescription(nextDescription)
+  }
+
+  // Also sync when the *same* task's persisted title/description
+  // changes from outside (e.g. another window editing the same task).
   useEffect(() => {
-    if (taskId != null) {
-      setTitle(taskTitle ?? '')
-      setDescription(taskDescription ?? '')
-    }
-  }, [taskId, taskTitle, taskDescription])
+    setTitle(taskTitle ?? '')
+    setDescription(taskDescription ?? '')
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally only on external value changes
+  }, [taskTitle, taskDescription])
 
   // Debounced save for title and description
   const debouncedUpdateTitle = useDebouncedCallback(
