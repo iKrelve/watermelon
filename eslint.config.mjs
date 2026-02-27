@@ -1,11 +1,11 @@
-import tseslint from '@electron-toolkit/eslint-config-ts'
+import tseslint from 'typescript-eslint'
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
 import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
 
-export default [
+export default tseslint.config(
   ...tseslint.configs.recommended,
   {
-    files: ['src/renderer/src/**/*.{ts,tsx}'],
+    files: ['src/mainview/**/*.{ts,tsx}'],
     plugins: {
       'react-hooks': eslintPluginReactHooks,
       'react-refresh': eslintPluginReactRefresh
@@ -16,11 +16,11 @@ export default [
     }
   },
   {
-    files: ['src/renderer/src/components/ui/**/*.{ts,tsx}'],
+    files: ['src/mainview/components/ui/**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/explicit-function-return-type': 'off',
       'react-refresh/only-export-components': 'off'
     }
   },
   { ignores: ['out/', 'dist/', 'node_modules/'] }
-]
+)
