@@ -4,6 +4,7 @@ import { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite'
 import * as schema from '../db/schema'
 import { tags, taskTags, tasks } from '../db/schema'
 import type { Tag, Task } from '../../shared/types'
+import { AppException } from '../../shared/types'
 
 export class TagService {
   constructor(private db: BunSQLiteDatabase<typeof schema>) {}
@@ -19,7 +20,7 @@ export class TagService {
 
   create(name: string, color?: string): Tag {
     if (!name || name.trim().length === 0) {
-      throw new Error('VALIDATION_ERROR: Tag name must not be empty')
+      throw new AppException('VALIDATION_ERROR', 'Tag name must not be empty')
     }
 
     // Check for duplicate
@@ -29,7 +30,7 @@ export class TagService {
       .where(eq(tags.name, name.trim()))
       .get()
     if (existing) {
-      throw new Error('VALIDATION_ERROR: Tag name already exists')
+      throw new AppException('VALIDATION_ERROR', 'Tag name already exists')
     }
 
     const id = uuidv4()
@@ -49,11 +50,11 @@ export class TagService {
   update(id: string, name: string, color?: string): Tag {
     const existing = this.db.select().from(tags).where(eq(tags.id, id)).get()
     if (!existing) {
-      throw new Error('NOT_FOUND: Tag not found')
+      throw new AppException('NOT_FOUND', 'Tag not found')
     }
 
     if (!name || name.trim().length === 0) {
-      throw new Error('VALIDATION_ERROR: Tag name must not be empty')
+      throw new AppException('VALIDATION_ERROR', 'Tag name must not be empty')
     }
 
     // Check for duplicate name (excluding current tag)
@@ -63,7 +64,7 @@ export class TagService {
       .where(and(eq(tags.name, name.trim()), sql`${tags.id} != ${id}`))
       .get()
     if (duplicate) {
-      throw new Error('VALIDATION_ERROR: Tag name already exists')
+      throw new AppException('VALIDATION_ERROR', 'Tag name already exists')
     }
 
     const updates: Record<string, unknown> = { name: name.trim() }

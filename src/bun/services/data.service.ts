@@ -1,6 +1,7 @@
 import { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite'
 import * as schema from '../db/schema'
 import { tasks, subTasks, categories, tags, taskTags } from '../db/schema'
+import { AppException } from '../../shared/types'
 
 interface ExportData {
   version: 1
@@ -51,11 +52,11 @@ export class DataService {
     try {
       data = JSON.parse(jsonStr)
     } catch {
-      throw new Error('VALIDATION_ERROR: Invalid JSON format')
+      throw new AppException('VALIDATION_ERROR', 'Invalid JSON format')
     }
 
     if (!data.version || data.version !== 1) {
-      throw new Error('VALIDATION_ERROR: Unsupported export version')
+      throw new AppException('VALIDATION_ERROR', 'Unsupported export version')
     }
 
     // Import categories first (tasks reference them)

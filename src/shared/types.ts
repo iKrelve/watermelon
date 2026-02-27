@@ -159,3 +159,27 @@ export interface AppError {
   message: string // User-friendly error description
   details?: Record<string, string> // Field-specific error info
 }
+
+/**
+ * Custom Error subclass that carries a structured error code.
+ * Thrown by service layer instead of encoding code in the message string.
+ */
+export class AppException extends Error {
+  readonly code: string
+  readonly details?: Record<string, string>
+
+  constructor(code: string, message: string, details?: Record<string, string>) {
+    super(message)
+    this.name = 'AppException'
+    this.code = code
+    this.details = details
+  }
+
+  toAppError(): AppError {
+    return {
+      code: this.code,
+      message: this.message,
+      ...(this.details ? { details: this.details } : {}),
+    }
+  }
+}
