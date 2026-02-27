@@ -1,18 +1,18 @@
 {
   "name": "watermelon",
   "version": "1.0.0",
+  "type": "module",
   "description": "小西瓜 - macOS 极简 Todo 管理桌面应用",
-  "main": "./out/main/index.js",
   "author": "",
   "license": "MIT",
   "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build && electron-builder --mac",
-    "build:dev": "electron-vite build",
-    "preview": "electron-vite preview",
+    "start": "vite build && electrobun dev",
+    "dev": "electrobun dev --watch",
+    "dev:hmr": "concurrently \"bun run hmr\" \"bun run start\"",
+    "hmr": "vite --port 5173",
+    "build": "vite build && electrobun build --env=canary",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "postinstall": "electron-rebuild -f -w better-sqlite3",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -27,12 +27,12 @@
     "@tiptap/pm": "^3.19.0",
     "@tiptap/react": "^3.19.0",
     "@tiptap/starter-kit": "^3.19.0",
-    "better-sqlite3": "^12.6.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.1",
+    "electrobun": "latest",
     "i18next": "^25.8.10",
     "lucide-react": "^0.564.0",
     "next-themes": "^0.4.6",
@@ -48,71 +48,19 @@
     "uuid": "^13.0.0",
     "zustand": "^5.0.11"
   },
-  "build": {
-    "appId": "com.xiao-xigua.watermelon",
-    "productName": "小西瓜",
-    "directories": {
-      "buildResources": "build",
-      "output": "dist"
-    },
-    "files": [
-      "out/**/*"
-    ],
-    "asarUnpack": [
-      "node_modules/better-sqlite3/**"
-    ],
-    "mac": {
-      "category": "public.app-category.productivity",
-      "icon": "build/icon.icns",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": ["universal"]
-        },
-        {
-          "target": "zip",
-          "arch": ["universal"]
-        }
-      ],
-      "artifactName": "${productName}-${version}-${arch}.${ext}"
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
-  },
   "devDependencies": {
-    "@electron-toolkit/eslint-config-ts": "^3.1.0",
-    "@electron-toolkit/preload": "^3.0.2",
-    "@electron-toolkit/utils": "^4.0.0",
-    "@electron/rebuild": "^4.0.3",
     "@tailwindcss/vite": "^4.1.18",
-    "@types/better-sqlite3": "^7.6.13",
+    "@types/bun": "latest",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^5.1.4",
+    "concurrently": "^9.1.0",
     "drizzle-kit": "^0.31.9",
-    "electron": "^40.4.1",
-    "electron-builder": "^26.7.0",
-    "electron-vite": "^5.0.0",
     "eslint": "^9.28.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "typescript-eslint": "^8.0.0",
     "fast-check": "^4.5.3",
     "prettier": "^3.8.1",
     "tailwindcss": "^4.1.18",
