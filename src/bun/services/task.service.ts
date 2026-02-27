@@ -15,6 +15,7 @@ import type {
   TaskFilter,
   ReorderTaskItem,
 } from '../../shared/types'
+import { AppException } from '../../shared/types'
 import { getNextOccurrence } from '../utils/recurrence'
 import { rowToTask, rowToSubTask } from '../utils/mappers'
 
@@ -28,7 +29,7 @@ export class TaskService {
 
   private validateTitle(title: string): void {
     if (!title || title.trim().length === 0) {
-      throw new Error('VALIDATION_ERROR: Title must not be empty or whitespace-only')
+      throw new AppException('VALIDATION_ERROR', 'Title must not be empty or whitespace-only')
     }
   }
 
@@ -159,7 +160,7 @@ export class TaskService {
 
     const existing = this.db.select().from(tasks).where(eq(tasks.id, id)).get()
     if (!existing) {
-      throw new Error('NOT_FOUND: Task not found')
+      throw new AppException('NOT_FOUND', 'Task not found')
     }
 
     const now = new Date().toISOString()
@@ -194,7 +195,7 @@ export class TaskService {
   complete(id: string): { completedTask: Task; nextTask?: Task } {
     const existing = this.db.select().from(tasks).where(eq(tasks.id, id)).get()
     if (!existing) {
-      throw new Error('NOT_FOUND: Task not found')
+      throw new AppException('NOT_FOUND', 'Task not found')
     }
 
     const now = new Date().toISOString()
@@ -246,7 +247,7 @@ export class TaskService {
     // Verify parent task exists
     const parent = this.db.select().from(tasks).where(eq(tasks.id, taskId)).get()
     if (!parent) {
-      throw new Error('NOT_FOUND: Parent task not found')
+      throw new AppException('NOT_FOUND', 'Parent task not found')
     }
 
     const id = uuidv4()
@@ -282,7 +283,7 @@ export class TaskService {
 
     const existing = this.db.select().from(subTasks).where(eq(subTasks.id, id)).get()
     if (!existing) {
-      throw new Error('NOT_FOUND: Sub-task not found')
+      throw new AppException('NOT_FOUND', 'Sub-task not found')
     }
 
     const updates: Record<string, unknown> = {}

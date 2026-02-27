@@ -21,6 +21,7 @@ import type {
   AppError,
   ReorderTaskItem,
 } from '../shared/types'
+import { AppException } from '../shared/types'
 
 // ============================================================
 // Database & Service Initialization
@@ -53,12 +54,11 @@ notificationService.scheduleAllFutureReminders()
 // ============================================================
 
 function wrapError(error: unknown): AppError {
+  if (error instanceof AppException) {
+    return error.toAppError()
+  }
   if (error instanceof Error) {
-    const [code, ...messageParts] = error.message.split(': ')
-    return {
-      code: code || 'UNKNOWN_ERROR',
-      message: messageParts.join(': ') || error.message,
-    }
+    return { code: 'UNKNOWN_ERROR', message: error.message }
   }
   return { code: 'UNKNOWN_ERROR', message: String(error) }
 }

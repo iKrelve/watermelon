@@ -4,6 +4,7 @@ import { BunSQLiteDatabase } from 'drizzle-orm/bun-sqlite'
 import * as schema from '../db/schema'
 import { categories, tasks } from '../db/schema'
 import type { Category, CreateCategoryInput, UpdateCategoryInput } from '../../shared/types'
+import { AppException } from '../../shared/types'
 
 export class CategoryService {
   constructor(private db: BunSQLiteDatabase<typeof schema>) {}
@@ -20,7 +21,7 @@ export class CategoryService {
 
   create(input: CreateCategoryInput): Category {
     if (!input.name || input.name.trim().length === 0) {
-      throw new Error('VALIDATION_ERROR: Category name must not be empty')
+      throw new AppException('VALIDATION_ERROR', 'Category name must not be empty')
     }
 
     // Check for duplicate name
@@ -30,7 +31,7 @@ export class CategoryService {
       .where(eq(categories.name, input.name.trim()))
       .get()
     if (existing) {
-      throw new Error('VALIDATION_ERROR: Category name already exists')
+      throw new AppException('VALIDATION_ERROR', 'Category name already exists')
     }
 
     const id = uuidv4()
@@ -71,12 +72,12 @@ export class CategoryService {
   update(id: string, input: UpdateCategoryInput): Category {
     const existing = this.db.select().from(categories).where(eq(categories.id, id)).get()
     if (!existing) {
-      throw new Error('NOT_FOUND: Category not found')
+      throw new AppException('NOT_FOUND', 'Category not found')
     }
 
     if (input.name !== undefined) {
       if (!input.name || input.name.trim().length === 0) {
-        throw new Error('VALIDATION_ERROR: Category name must not be empty')
+        throw new AppException('VALIDATION_ERROR', 'Category name must not be empty')
       }
       // Check duplicate (excluding current)
       const dup = this.db
@@ -85,7 +86,7 @@ export class CategoryService {
         .where(eq(categories.name, input.name.trim()))
         .get()
       if (dup && dup.id !== id) {
-        throw new Error('VALIDATION_ERROR: Category name already exists')
+        throw new AppException('VALIDATION_ERROR', 'Category name already exists')
       }
     }
 

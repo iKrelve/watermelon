@@ -59,7 +59,7 @@ export function Layout(): React.JSX.Element {
     return (
       <div className="flex h-screen flex-col bg-background">
         {/* macOS drag region */}
-        <div className="drag-region flex h-[38px] shrink-0 items-center justify-end px-3">
+        <div className="electrobun-webkit-app-region-drag drag-region flex h-[38px] shrink-0 items-center justify-end px-3">
           <div className="no-drag">
             <TooltipProvider delayDuration={300}>
               <Tooltip>
@@ -97,7 +97,7 @@ export function Layout(): React.JSX.Element {
         <AppSidebar />
         <SidebarInset>
           {/* macOS drag region */}
-          <div className="drag-region h-[38px] shrink-0" />
+          <div className="electrobun-webkit-app-region-drag drag-region h-[38px] shrink-0" />
           <ScrollArea className="h-[calc(100vh-38px)]">
             <Statistics />
           </ScrollArea>
@@ -115,7 +115,7 @@ export function Layout(): React.JSX.Element {
         <SidebarInset>
           <div className="flex h-screen flex-col overflow-hidden">
             {/* macOS drag region */}
-            <div className="drag-region h-[38px] shrink-0" />
+            <div className="electrobun-webkit-app-region-drag drag-region h-[38px] shrink-0" />
             <div className="flex-1 overflow-hidden">
               <CalendarView />
             </div>
@@ -133,7 +133,7 @@ export function Layout(): React.JSX.Element {
       <SidebarInset>
         <div className="flex h-screen flex-col overflow-hidden">
           {/* macOS drag region spanning full width */}
-          <div className="drag-region h-[38px] shrink-0" />
+          <div className="electrobun-webkit-app-region-drag drag-region h-[38px] shrink-0" />
 
           <ResizablePanelGroup
             orientation="horizontal"

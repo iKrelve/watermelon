@@ -5,6 +5,12 @@ node_modules/
 out/
 dist/
 
+# Electrobun build output
+build/dev-*/
+build/canary-*/
+build/release-*/
+.build/
+
 # Vite
 .vite/
 
