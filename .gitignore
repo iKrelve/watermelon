@@ -8,8 +8,10 @@ dist/
 # Electrobun build output
 build/dev-*/
 build/canary-*/
+build/stable-*/
 build/release-*/
 .build/
+artifacts/
 
 # Vite
 .vite/
