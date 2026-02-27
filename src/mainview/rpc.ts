@@ -38,6 +38,7 @@ export const api = {
   getTasks: (filter?: TaskFilter) => electrobun.rpc!.request.getTasks({ filter }),
   getTaskById: (id: string) => electrobun.rpc!.request.getTaskById({ id }),
   completeTask: (id: string) => electrobun.rpc!.request.completeTask({ id }),
+  uncompleteTask: (id: string) => electrobun.rpc!.request.uncompleteTask({ id }),
   reorderTasks: (items: ReorderTaskItem[]) => electrobun.rpc!.request.reorderTasks({ items }),
 
   // Sub-task operations

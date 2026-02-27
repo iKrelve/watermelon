@@ -226,6 +226,7 @@ const en = {
     actionsGroup: 'Actions',
     newTask: 'New task',
     completeTask: 'Complete selected task',
+    uncompleteTask: 'Mark selected task as incomplete',
     deleteTask: 'Delete selected task',
     searchTask: 'Search tasks',
     windowDataGroup: 'Window & Data',

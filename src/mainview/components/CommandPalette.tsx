@@ -17,6 +17,7 @@ import {
   useTagsQuery,
   useDeleteTask,
   useCompleteTask,
+  useUncompleteTask,
   useExportData,
   useImportData,
 } from '@/hooks/useDataQueries'
@@ -56,6 +57,7 @@ export function CommandPalette(): React.JSX.Element {
 
   const deleteTaskMut = useDeleteTask()
   const completeTaskMut = useCompleteTask()
+  const uncompleteTaskMut = useUncompleteTask()
   const exportDataMut = useExportData()
   const importDataMut = useImportData()
 
@@ -174,6 +176,16 @@ export function CommandPalette(): React.JSX.Element {
     }
   }, [selectedTask, completeTaskMut, setOpen])
 
+  const handleUncompleteSelected = useCallback(async (): Promise<void> => {
+    if (!selectedTask || selectedTask.status !== 'completed') return
+    setOpen(false)
+    try {
+      await uncompleteTaskMut.mutateAsync(selectedTask.id)
+    } catch {
+      // handled globally
+    }
+  }, [selectedTask, uncompleteTaskMut, setOpen])
+
   const handleDeleteSelected = useCallback(async (): Promise<void> => {
     if (!selectedTask) return
     setOpen(false)
@@ -269,6 +281,13 @@ export function CommandPalette(): React.JSX.Element {
             <CommandItem onSelect={handleCompleteSelected}>
               <CheckCircle2 className="size-4" />
               <span>{t('command.completeTask')}</span>
+              <CommandShortcut>Enter</CommandShortcut>
+            </CommandItem>
+          )}
+          {selectedTask && selectedTask.status === 'completed' && (
+            <CommandItem onSelect={handleUncompleteSelected}>
+              <CheckCircle2 className="size-4" />
+              <span>{t('command.uncompleteTask')}</span>
               <CommandShortcut>Enter</CommandShortcut>
             </CommandItem>
           )}

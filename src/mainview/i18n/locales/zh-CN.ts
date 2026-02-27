@@ -226,6 +226,7 @@ const zhCN = {
     actionsGroup: '操作',
     newTask: '新建任务',
     completeTask: '完成选中任务',
+    uncompleteTask: '取消完成选中任务',
     deleteTask: '删除选中任务',
     searchTask: '搜索任务',
     windowDataGroup: '窗口 & 数据',

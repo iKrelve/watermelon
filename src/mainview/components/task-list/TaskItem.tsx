@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react'
 import { useUIStore } from '@/stores/ui-store'
-import { useCompleteTask, useUpdateSubTask } from '@/hooks/useDataQueries'
+import { useCompleteTask, useUncompleteTask, useUpdateSubTask } from '@/hooks/useDataQueries'
 import type { Task } from '@shared/types'
 import { TaskItemContent } from './TaskItemContent'
 
 export function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean }): React.JSX.Element {
   const selectTask = useUIStore((s) => s.selectTask)
   const completeTaskMut = useCompleteTask()
+  const uncompleteTaskMut = useUncompleteTask()
   const updateSubTaskMut = useUpdateSubTask()
   const subTasks = task.subTasks ?? []
   const subTaskCount = subTasks.length
@@ -17,12 +18,14 @@ export function TaskItem({ task, isSelected }: { task: Task; isSelected: boolean
   }
 
   const handleComplete = async (checked: boolean | 'indeterminate'): Promise<void> => {
-    if (checked === true && task.status !== 'completed') {
-      try {
+    try {
+      if (checked === true && task.status !== 'completed') {
         await completeTaskMut.mutateAsync(task.id)
-      } catch {
-        // Will be handled by error handler
+      } else if (checked === false && task.status === 'completed') {
+        await uncompleteTaskMut.mutateAsync(task.id)
       }
+    } catch {
+      // Will be handled by error handler
     }
   }
 
