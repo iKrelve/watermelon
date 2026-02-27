@@ -81,7 +81,7 @@ let savedBounds: { x: number; y: number; width: number; height: number } | null 
 // RPC Definition
 // ============================================================
 
-const DEV_SERVER_PORT = 5173
+const DEV_SERVER_PORT = 6689
 const DEV_SERVER_URL = `http://localhost:${DEV_SERVER_PORT}`
 
 const watermelonRPC = BrowserView.defineRPC<WatermelonRPC>({

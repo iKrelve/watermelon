@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "start": "vite build && electrobun dev",
-    "dev": "concurrently \"vite --port 5173\" \"vite build && electrobun dev --watch\"",
+    "dev": "concurrently \"vite --port 6689\" \"vite build && electrobun dev --watch\"",
     "dev:no-hmr": "vite build && electrobun dev --watch",
     "build": "vite build && electrobun build --env=canary",
     "lint": "eslint .",
