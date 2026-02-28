@@ -246,6 +246,7 @@ export function TaskItemContent({
               subTask={st}
               onToggle={handleToggleSubTask}
               depth={0}
+              parentTaskId={task.id}
             />
           ))}
         </div>

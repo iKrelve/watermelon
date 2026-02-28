@@ -17,11 +17,14 @@ export function SubTaskRow({
   subTask,
   onToggle,
   depth = 0,
+  parentTaskId,
 }: {
   subTask: SubTask
   onToggle: (id: string, completed: boolean) => void
   depth?: number
+  parentTaskId?: string
 }): React.JSX.Element {
+  const selectTask = useUIStore((s) => s.selectTask)
   const compactMode = useUIStore((s) => s.compactMode)
   const children = subTask.children ?? []
   const [childrenExpanded, setChildrenExpanded] = useState(compactMode && children.length > 0)
@@ -41,8 +44,17 @@ export function SubTaskRow({
   return (
     <div>
       <div
+        role="button"
+        tabIndex={0}
+        onClick={() => parentTaskId && selectTask(parentTaskId)}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && parentTaskId) {
+            e.preventDefault()
+            selectTask(parentTaskId)
+          }
+        }}
         className={cn(
-          'relative flex items-start gap-2 py-1 pl-2 pr-1',
+          'relative flex items-start gap-2 py-1 pl-2 pr-1 cursor-pointer',
           'hover:bg-accent/40 rounded transition-colors',
           isOverdueSubTask && 'bg-destructive/5'
         )}
@@ -152,6 +164,7 @@ export function SubTaskRow({
               subTask={child}
               onToggle={onToggle}
               depth={depth + 1}
+              parentTaskId={parentTaskId}
             />
           ))}
         </div>
