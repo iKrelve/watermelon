@@ -24,6 +24,7 @@
   "bundle": {
     "active": true,
     "targets": ["app", "dmg"],
+    "createUpdaterArtifacts": "v1Compatible",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -35,5 +36,12 @@
       "minimumSystemVersion": "10.15"
     }
   },
-  "plugins": {}
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRFMEIwRENCOUU1RTU1RUUKUldUdVZWNmV5dzBMVGhsOExuN0FlRDN5ajJEMmYyQS9BK05oM2hqZWdYd2ZtSjBGNDNFcE55ZXYK",
+      "endpoints": [
+        "https://github.com/iKrelve/watermelon/releases/latest/download/latest.json"
+      ]
+    }
+  }
 }

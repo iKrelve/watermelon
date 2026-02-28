@@ -273,6 +273,19 @@ const en = {
     operationFailed: 'Operation failed',
   },
 
+  // Updater
+  updater: {
+    title: 'Update Available',
+    description: 'Watermelon v{{version}} is available. Would you like to update now?',
+    releaseNotes: 'Release notes:',
+    downloading: 'Downloading...',
+    installing: 'Installing...',
+    install: 'Update Now',
+    updating: 'Updating...',
+    later: 'Later',
+    error: 'Update failed: {{message}}',
+  },
+
   // Toast
   toast: {
     importSuccess: 'Data imported successfully',
