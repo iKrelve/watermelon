@@ -38,7 +38,9 @@ watermelon/
 ├── eslint.config.mjs             # ESLint v9 flat config
 ├── .prettierrc                   # Prettier rules
 ├── scripts/
-│   └── post-build.ts            # postBuild hook: injects CFBundleDisplayName (小西瓜) into Info.plist
+│   ├── post-build.ts            # postBuild hook: injects CFBundleDisplayName (小西瓜) into Info.plist
+│   ├── build-all.sh             # Dual-arch build script (arm64 + x64), used by `bun run build`
+│   └── build-x64.sh             # x64-only build via Rosetta 2, used by `bun run build:x64`
 ├── build/                        # App icons (icon.icns, icon.svg, icon_1024.png)
 ├── dist/                         # Vite build output (copied to Electrobun bundle by config)
 ├── src/
@@ -101,7 +103,8 @@ watermelon/
 │           ├── date-filters.ts  # Task date filtering (isOverdue, isUpcoming, filterToday)
 │           ├── priority.ts      # Priority helpers (rank, color, label, badge classes)
 │           └── __tests__/       # Utils tests
-└── .build/                       # Electrobun build output (gitignored)
+├── build/                        # Electrobun build output (gitignored), e.g. stable-macos-arm64/, stable-macos-x64/
+└── artifacts/                    # Final distributable artifacts (DMG, tar.zst, update.json) for all archs
 ```
 
 ## Path Aliases
@@ -132,12 +135,24 @@ Maps to `src/bun/` and is configured in:
 bun run dev          # Start dev mode (Electrobun dev with --watch, auto-rebuild on file changes)
 bun run start        # Build Vite first, then launch Electrobun dev (no watch)
 bun run dev:hmr      # HMR mode: runs Vite dev server + Electrobun concurrently (hot reload)
-bun run build        # Production build: Vite build + electrobun build --env=canary
+bun run build        # Production build: dual-arch (arm64 + x64), --env=stable
+bun run build:arm64  # Production build: arm64 only
+bun run build:x64    # Production build: x64 only (via Rosetta 2)
 bun run lint         # ESLint check
 bun run format       # Prettier format
 bun run test         # Run tests (vitest run)
 bun run test:watch   # Run tests in watch mode (vitest)
 ```
+
+### Build & Distribution
+
+- **`bun run build`** — 默认构建命令，同时产出 arm64 (Apple Silicon) 和 x64 (Intel) 两个架构的生产包（`--env=stable`）。
+- **`bun run build:arm64`** — 仅构建 arm64 版本。
+- **`bun run build:x64`** — 仅构建 x64 版本。通过下载 x64 版本的 Electrobun CLI 并在 Rosetta 2 下运行实现交叉构建。x64 CLI 会缓存在 `node_modules/electrobun/.cache-x64/`。
+- **构建产物**:
+  - `build/stable-macos-arm64/` / `build/stable-macos-x64/` — 完整的 `.app` bundle
+  - `artifacts/` — 可分发文件（`.dmg` 安装镜像、`.tar.zst` 压缩包、`update.json`），两个架构的文件通过文件名前缀区分（`stable-macos-arm64-*` / `stable-macos-x64-*`）
+- **前置条件**: x64 构建需要 macOS 上安装了 Rosetta 2（`softwareupdate --install-rosetta`）
 
 ### Dev Workflow
 

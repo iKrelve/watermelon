@@ -20,8 +20,14 @@ bun run dev:no-hmr
 # 先构建前端再启动 Electrobun dev（无 watch）
 bun run start
 
-# 生产打包（vite build + electrobun build）
+# 生产打包（双架构 arm64 + x64，产物在 artifacts/ 目录）
 bun run build
+
+# 仅构建 arm64 (Apple Silicon)
+bun run build:arm64
+
+# 仅构建 x64 (Intel，通过 Rosetta 2)
+bun run build:x64
 
 # 测试
 bun run test
