@@ -263,16 +263,21 @@ pub fn set_compact_mode(
         .ok_or_else(|| "Main window not found".to_string())?;
 
     if compact {
-        // Save current window position and size before shrinking
-        let position = window.outer_position().ok();
-        let size = window.outer_size().ok();
-        if let (Some(pos), Some(sz)) = (position, size) {
-            let mut saved = saved_geometry.inner.lock().unwrap();
-            *saved = Some(WindowGeometry {
-                position: pos,
-                size: sz,
-            });
+        // Save current window position and size before shrinking,
+        // but only if we don't already have a saved geometry (avoids
+        // overwriting the real geometry on app restart in compact mode).
+        let mut saved = saved_geometry.inner.lock().unwrap();
+        if saved.is_none() {
+            let position = window.outer_position().ok();
+            let size = window.outer_size().ok();
+            if let (Some(pos), Some(sz)) = (position, size) {
+                *saved = Some(WindowGeometry {
+                    position: pos,
+                    size: sz,
+                });
+            }
         }
+        drop(saved);
 
         let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(420.0, 600.0)));
         let _ = window.center();

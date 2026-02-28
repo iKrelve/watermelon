@@ -22,8 +22,9 @@ export function SubTaskRow({
   onToggle: (id: string, completed: boolean) => void
   depth?: number
 }): React.JSX.Element {
-  const [childrenExpanded, setChildrenExpanded] = useState(false)
   const compactMode = useUIStore((s) => s.compactMode)
+  const children = subTask.children ?? []
+  const [childrenExpanded, setChildrenExpanded] = useState(compactMode && children.length > 0)
 
   const formattedDueDate = subTask.dueDate
     ? format(parseISO(subTask.dueDate), 'M月d日', { locale: zhCN })
@@ -34,7 +35,6 @@ export function SubTaskRow({
     !subTask.completed &&
     new Date(subTask.dueDate) < new Date(new Date().toDateString())
 
-  const children = subTask.children ?? []
   const childCount = children.length
   const completedChildCount = children.filter((c) => c.completed).length
 
