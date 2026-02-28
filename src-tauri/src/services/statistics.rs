@@ -1,5 +1,5 @@
 use rusqlite::{Connection, params};
-use chrono::{NaiveDate, NaiveDateTime, Datelike, Weekday, Duration};
+use chrono::{NaiveDate, Datelike, Duration};
 use crate::models::*;
 
 pub fn get_stats(conn: &Connection, period: &str) -> Result<StatsSummary, AppError> {

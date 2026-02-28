@@ -42,7 +42,7 @@ pub fn schedule(state: &NotificationState, app: &tauri::AppHandle, task_id: &str
     let cancel_flag = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
     let flag_clone = cancel_flag.clone();
     let title_owned = title.to_string();
-    let task_id_owned = task_id.to_string();
+    let _task_id_owned = task_id.to_string();
     let app_handle = app.clone();
 
     let handle = std::thread::spawn(move || {
@@ -75,13 +75,12 @@ pub fn check_missed_reminders(conn: &Connection, app: &tauri::AppHandle) {
         Err(_) => return,
     };
 
-    let missed: Vec<(String, String)> = stmt
-        .query_map(params![now], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-        })
-        .unwrap_or_else(|_| rusqlite::Rows::from(std::iter::empty()))
-        .filter_map(|r| r.ok())
-        .collect();
+    let missed: Vec<(String, String)> = match stmt.query_map(params![now], |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+    }) {
+        Ok(rows) => rows.filter_map(|r| r.ok()).collect(),
+        Err(_) => vec![],
+    };
 
     for (id, title) in &missed {
         deliver_notification(app, title);
@@ -100,17 +99,16 @@ pub fn schedule_all_future_reminders(conn: &Connection, state: &NotificationStat
         Err(_) => return,
     };
 
-    let future_tasks: Vec<(String, String, String)> = stmt
-        .query_map([], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-            ))
-        })
-        .unwrap_or_else(|_| rusqlite::Rows::from(std::iter::empty()))
-        .filter_map(|r| r.ok())
-        .collect();
+    let future_tasks: Vec<(String, String, String)> = match stmt.query_map([], |row| {
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, String>(2)?,
+        ))
+    }) {
+        Ok(rows) => rows.filter_map(|r| r.ok()).collect(),
+        Err(_) => vec![],
+    };
 
     for (id, title, reminder_time) in &future_tasks {
         if reminder_time.as_str() > now.as_str() {
@@ -120,6 +118,7 @@ pub fn schedule_all_future_reminders(conn: &Connection, state: &NotificationStat
 }
 
 /// Clear all scheduled reminders.
+#[allow(dead_code)]
 pub fn clear_all(state: &NotificationState) {
     for (_, flag) in state.cancel_flags.lock().unwrap().drain() {
         flag.store(true, std::sync::atomic::Ordering::Relaxed);

@@ -175,18 +175,18 @@ pub fn get_all_tasks(conn: &Connection, filter: Option<TaskFilter>) -> Result<Ve
         let mut stmt = conn
             .prepare("SELECT * FROM tasks WHERE status = ?1 ORDER BY sort_order")
             .map_err(|e| AppError { code: "DB_ERROR".into(), message: e.to_string(), details: None })?;
-        stmt.query_map(params![status], row_to_task)
-            .map_err(|e| AppError { code: "DB_ERROR".into(), message: e.to_string(), details: None })?
-            .filter_map(|r| r.ok())
-            .collect()
+        let mapped = stmt.query_map(params![status], row_to_task)
+            .map_err(|e| AppError { code: "DB_ERROR".into(), message: e.to_string(), details: None })?;
+        let result: Vec<Task> = mapped.filter_map(|r| r.ok()).collect();
+        result
     } else {
         let mut stmt = conn
             .prepare("SELECT * FROM tasks ORDER BY sort_order")
             .map_err(|e| AppError { code: "DB_ERROR".into(), message: e.to_string(), details: None })?;
-        stmt.query_map([], row_to_task)
-            .map_err(|e| AppError { code: "DB_ERROR".into(), message: e.to_string(), details: None })?
-            .filter_map(|r| r.ok())
-            .collect()
+        let mapped = stmt.query_map([], row_to_task)
+            .map_err(|e| AppError { code: "DB_ERROR".into(), message: e.to_string(), details: None })?;
+        let result: Vec<Task> = mapped.filter_map(|r| r.ok()).collect();
+        result
     };
 
     if rows.is_empty() {
