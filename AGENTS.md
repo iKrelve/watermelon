@@ -267,3 +267,30 @@ Components are generated into `src/mainview/components/ui/` with `@/` import ali
 - **Secrets required**: `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
 - **Signing key**: Stored at `~/.tauri/watermelon.key` (private) and `~/.tauri/watermelon.key.pub` (public)
 - **Daily workflow**: Just push to master with conventional commit messages → everything else is automatic
+
+### Release Workflow (发版流程)
+
+推送到 `master` 分支后全自动发版，无需手动操作：
+
+```bash
+# 日常开发发版
+git add -A
+git commit -m "feat: 新增XX功能"     # feat → minor (+0.1.0)
+git commit -m "fix: 修复XX问题"      # fix → patch (+0.0.1)
+git push github master               # 推到 GitHub → 自动触发 CI
+git push origin master                # 同步到内部仓库（可选）
+```
+
+CI 自动完成：版本号升级 → 更新 package.json/Cargo.toml/tauri.conf.json → 打 tag → 构建 macOS universal binary → 发布 GitHub Release（含 .dmg + 更新包 + latest.json）
+
+已安装用户启动应用 3 秒后自动检测新版本，弹窗提示下载安装。
+
+首次配置需要：
+1. `bunx tauri signer generate -w ~/.tauri/watermelon.key` 生成签名密钥
+2. 在 GitHub Secrets 配置 `TAURI_SIGNING_PRIVATE_KEY` 和 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+
+### Git Identity (多仓库身份隔离)
+
+- 此仓库使用独立的 Git 身份配置（`git config` 不带 `--global`），避免美团内部邮箱暴露在 GitHub 公开仓库
+- 仓库级配置：`user.name = "iKrelve"`, `user.email = "iKrelve@users.noreply.github.com"`
+- 这不会影响其他项目的全局 Git 配置
