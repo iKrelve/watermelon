@@ -35,7 +35,12 @@ import { CommandPalette } from '@/components/CommandPalette'
  * macOS: titleBarStyle=Overlay, so we add a drag region at the
  * top of each panel so the user can still drag the window.
  */
-export function Layout(): React.JSX.Element {
+interface LayoutProps {
+  onCheckUpdate: () => Promise<void>
+  isCheckingUpdate: boolean
+}
+
+export function Layout({ onCheckUpdate, isCheckingUpdate }: LayoutProps): React.JSX.Element {
   const { t } = useTranslation()
   const filterView = useUIStore((s) => s.filterView)
   const compactMode = useUIStore((s) => s.compactMode)
@@ -94,7 +99,7 @@ export function Layout(): React.JSX.Element {
   if (filterView === 'stats') {
     return (
       <SidebarProvider defaultOpen={true}>
-        <AppSidebar />
+        <AppSidebar onCheckUpdate={onCheckUpdate} isCheckingUpdate={isCheckingUpdate} />
         <SidebarInset>
           {/* macOS drag region */}
           <div data-tauri-drag-region className="drag-region h-[38px] shrink-0" />
@@ -111,7 +116,7 @@ export function Layout(): React.JSX.Element {
   if (filterView === 'calendar') {
     return (
       <SidebarProvider defaultOpen={true}>
-        <AppSidebar />
+        <AppSidebar onCheckUpdate={onCheckUpdate} isCheckingUpdate={isCheckingUpdate} />
         <SidebarInset>
           <div className="flex h-screen flex-col overflow-hidden">
             {/* macOS drag region */}
@@ -129,7 +134,7 @@ export function Layout(): React.JSX.Element {
   // Default: Three-panel layout with resizable panels
   return (
     <SidebarProvider defaultOpen={true}>
-      <AppSidebar />
+      <AppSidebar onCheckUpdate={onCheckUpdate} isCheckingUpdate={isCheckingUpdate} />
       <SidebarInset>
         <div className="flex h-screen flex-col overflow-hidden">
           {/* macOS drag region spanning full width */}

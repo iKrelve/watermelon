@@ -57,13 +57,14 @@ import {
   Sun,
   Moon,
   Monitor,
+  RefreshCw,
 } from 'lucide-react'
 
 interface SmartFilterItem {
   id: FilterView
   label: string
   icon: React.ReactNode
-  getBadge?: (tasks: import('../../../shared/types').Task[]) => number
+  getBadge?: (tasks: import('@shared/types').Task[]) => number
 }
 
 const smartFilterKeys: Record<string, string> = {
@@ -106,7 +107,12 @@ const smartFilters: SmartFilterItem[] = [
   },
 ]
 
-export function AppSidebar(): React.JSX.Element {
+interface AppSidebarProps {
+  onCheckUpdate: () => Promise<void>
+  isCheckingUpdate: boolean
+}
+
+export function AppSidebar({ onCheckUpdate, isCheckingUpdate }: AppSidebarProps): React.JSX.Element {
   const { t } = useTranslation()
   const filterView = useUIStore((s) => s.filterView)
   const filterCategoryId = useUIStore((s) => s.filterCategoryId)
@@ -457,6 +463,16 @@ export function AppSidebar(): React.JSX.Element {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => void onCheckUpdate()}
+                disabled={isCheckingUpdate}
+                tooltip={t('sidebar.checkUpdate')}
+              >
+                <RefreshCw className={`size-4 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+                <span>{isCheckingUpdate ? t('sidebar.checking') : t('sidebar.checkUpdate')}</span>
+              </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

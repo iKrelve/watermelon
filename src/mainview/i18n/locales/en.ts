@@ -24,6 +24,8 @@ const en = {
     themeLight: 'Light',
     themeDark: 'Dark',
     themeSystem: 'System',
+    checkUpdate: 'Check for updates',
+    checking: 'Checking...',
   },
 
   // Filter titles

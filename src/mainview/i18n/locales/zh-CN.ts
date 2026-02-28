@@ -24,6 +24,8 @@ const zhCN = {
     themeLight: '亮色',
     themeDark: '暗色',
     themeSystem: '跟随系统',
+    checkUpdate: '检查更新',
+    checking: '检查中...',
   },
 
   // Filter titles

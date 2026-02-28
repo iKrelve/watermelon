@@ -7,7 +7,7 @@ function App(): React.JSX.Element {
 
   return (
     <>
-      <Layout />
+      <Layout onCheckUpdate={updater.checkForUpdate} isCheckingUpdate={updater.checking} />
       <UpdateDialog updater={updater} />
     </>
   )

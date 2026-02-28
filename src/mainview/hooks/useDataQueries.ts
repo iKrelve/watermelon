@@ -19,7 +19,6 @@ import type {
   CreateCategoryInput,
   UpdateCategoryInput,
   TaskFilter,
-  AppError,
   StatsSummary,
   DailyTrend,
   ReorderTaskItem,
@@ -37,28 +36,6 @@ function unwrap<T>(result: T): T {
   return result
 }
 
-/**
- * Parse Tauri command errors. Tauri rejects with the error string
- * from our Rust Result<T, String> commands (JSON-serialized AppError).
- */
-function handleTauriError(error: unknown): never {
-  if (typeof error === 'string') {
-    try {
-      const parsed = JSON.parse(error) as AppError
-      toast.error(parsed.message || i18n.t('error.operationFailed'))
-      throw parsed
-    } catch (parseErr) {
-      if (parseErr && typeof parseErr === 'object' && 'code' in parseErr) {
-        throw parseErr // Already an AppError from the JSON.parse path
-      }
-      toast.error(error)
-      throw new Error(error)
-    }
-  }
-  const msg = error instanceof Error ? error.message : String(error)
-  toast.error(msg || i18n.t('error.operationFailed'))
-  throw error
-}
 
 // ============================================================
 // Query keys
@@ -88,21 +65,21 @@ export function useTasksQuery(): UseQueryResult<Task[]> {
 }
 
 export function useCategoriesQuery(): UseQueryResult<Category[]> {
-  return useQuery({
+  return useQuery<Category[]>({
     queryKey: queryKeys.categories,
     queryFn: async () => {
       const result = await window.api.getCategories()
-      return unwrap(result)
+      return unwrap(result) as Category[]
     },
   })
 }
 
 export function useTagsQuery(): UseQueryResult<Tag[]> {
-  return useQuery({
+  return useQuery<Tag[]>({
     queryKey: queryKeys.tags,
     queryFn: async () => {
       const result = await window.api.getTags()
-      return unwrap(result)
+      return unwrap(result) as Tag[]
     },
   })
 }
@@ -113,10 +90,10 @@ export function useTagsQuery(): UseQueryResult<Tag[]> {
 
 export function useCreateTask(): UseMutationResult<Task, Error, CreateTaskInput> {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<Task, Error, CreateTaskInput>({
     mutationFn: async (data: CreateTaskInput) => {
       const result = await window.api.createTask(data)
-      return unwrap(result)
+      return unwrap(result) as Task
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
@@ -130,10 +107,10 @@ export function useUpdateTask(): UseMutationResult<
   { id: string; data: UpdateTaskInput }
 > {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<Task, Error, { id: string; data: UpdateTaskInput }>({
     mutationFn: async ({ id, data }: { id: string; data: UpdateTaskInput }) => {
       const result = await window.api.updateTask(id, data)
-      return unwrap(result)
+      return unwrap(result) as Task
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
@@ -143,7 +120,7 @@ export function useUpdateTask(): UseMutationResult<
 
 export function useDeleteTask(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<void, Error, string>({
     mutationFn: async (id: string) => {
       const result = await window.api.deleteTask(id)
       unwrap(result)
@@ -160,10 +137,10 @@ export function useCompleteTask(): UseMutationResult<
   string
 > {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<{ completedTask: Task; nextTask?: Task }, Error, string, { previousTasks: Task[] | undefined }>({
     mutationFn: async (id: string) => {
       const result = await window.api.completeTask(id)
-      return unwrap(result)
+      return unwrap(result) as { completedTask: Task; nextTask?: Task }
     },
     // Optimistic update: immediately mark as completed in UI
     onMutate: async (id: string) => {
@@ -192,10 +169,10 @@ export function useCompleteTask(): UseMutationResult<
 
 export function useUncompleteTask(): UseMutationResult<Task, Error, string> {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<Task, Error, string, { previousTasks: Task[] | undefined }>({
     mutationFn: async (id: string) => {
       const result = await window.api.uncompleteTask(id)
-      return unwrap(result)
+      return unwrap(result) as Task
     },
     // Optimistic update: immediately mark as todo in UI
     onMutate: async (id: string) => {
@@ -224,7 +201,7 @@ export function useUncompleteTask(): UseMutationResult<Task, Error, string> {
 
 export function useReorderTasks(): UseMutationResult<void, Error, ReorderTaskItem[]> {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<void, Error, ReorderTaskItem[], { previousTasks: Task[] | undefined }>({
     mutationFn: async (items: ReorderTaskItem[]) => {
       const result = await window.api.reorderTasks(items)
       unwrap(result)
@@ -266,7 +243,7 @@ export function useCreateSubTask(): UseMutationResult<
   { taskId: string; data: CreateSubTaskInput; parentId?: string }
 > {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<SubTask, Error, { taskId: string; data: CreateSubTaskInput; parentId?: string }>({
     mutationFn: async ({
       taskId,
       data,
@@ -277,7 +254,7 @@ export function useCreateSubTask(): UseMutationResult<
       parentId?: string
     }) => {
       const result = await window.api.createSubTask(taskId, data, parentId)
-      return unwrap(result)
+      return unwrap(result) as SubTask
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
@@ -291,10 +268,10 @@ export function useUpdateSubTask(): UseMutationResult<
   { id: string; data: UpdateSubTaskInput }
 > {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<SubTask, Error, { id: string; data: UpdateSubTaskInput }>({
     mutationFn: async ({ id, data }: { id: string; data: UpdateSubTaskInput }) => {
       const result = await window.api.updateSubTask(id, data)
-      return unwrap(result)
+      return unwrap(result) as SubTask
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
@@ -304,7 +281,7 @@ export function useUpdateSubTask(): UseMutationResult<
 
 export function useDeleteSubTask(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<void, Error, string>({
     mutationFn: async (id: string) => {
       const result = await window.api.deleteSubTask(id)
       unwrap(result)
@@ -321,10 +298,10 @@ export function useDeleteSubTask(): UseMutationResult<void, Error, string> {
 
 export function useCreateCategory(): UseMutationResult<Category, Error, CreateCategoryInput> {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<Category, Error, CreateCategoryInput>({
     mutationFn: async (data: CreateCategoryInput) => {
       const result = await window.api.createCategory(data)
-      return unwrap(result)
+      return unwrap(result) as Category
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories })
@@ -338,10 +315,10 @@ export function useUpdateCategory(): UseMutationResult<
   { id: string; data: UpdateCategoryInput }
 > {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<Category, Error, { id: string; data: UpdateCategoryInput }>({
     mutationFn: async ({ id, data }: { id: string; data: UpdateCategoryInput }) => {
       const result = await window.api.updateCategory(id, data)
-      return unwrap(result)
+      return unwrap(result) as Category
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories })
@@ -351,7 +328,7 @@ export function useUpdateCategory(): UseMutationResult<
 
 export function useDeleteCategory(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<void, Error, string>({
     mutationFn: async (id: string) => {
       const result = await window.api.deleteCategory(id)
       unwrap(result)
@@ -373,10 +350,10 @@ export function useCreateTag(): UseMutationResult<
   { name: string; color?: string }
 > {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<Tag, Error, { name: string; color?: string }>({
     mutationFn: async ({ name, color }: { name: string; color?: string }) => {
       const result = await window.api.createTag(name, color)
-      return unwrap(result)
+      return unwrap(result) as Tag
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tags })
@@ -390,10 +367,10 @@ export function useUpdateTag(): UseMutationResult<
   { id: string; name: string; color?: string }
 > {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<Tag, Error, { id: string; name: string; color?: string }>({
     mutationFn: async ({ id, name, color }: { id: string; name: string; color?: string }) => {
       const result = await window.api.updateTag(id, name, color)
-      return unwrap(result)
+      return unwrap(result) as Tag
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tags })
@@ -403,7 +380,7 @@ export function useUpdateTag(): UseMutationResult<
 
 export function useDeleteTag(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<void, Error, string>({
     mutationFn: async (id: string) => {
       const result = await window.api.deleteTag(id)
       unwrap(result)
@@ -420,7 +397,7 @@ export function useAddTagToTask(): UseMutationResult<
   { taskId: string; tagId: string }
 > {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<void, Error, { taskId: string; tagId: string }>({
     mutationFn: async ({ taskId, tagId }: { taskId: string; tagId: string }) => {
       const result = await window.api.addTagToTask(taskId, tagId)
       unwrap(result)
@@ -437,7 +414,7 @@ export function useRemoveTagFromTask(): UseMutationResult<
   { taskId: string; tagId: string }
 > {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<void, Error, { taskId: string; tagId: string }>({
     mutationFn: async ({ taskId, tagId }: { taskId: string; tagId: string }) => {
       const result = await window.api.removeTagFromTask(taskId, tagId)
       unwrap(result)
@@ -457,10 +434,10 @@ export function useSearchTasks(): UseMutationResult<
   Error,
   { query: string; filters?: TaskFilter }
 > {
-  return useMutation({
+  return useMutation<Task[], Error, { query: string; filters?: TaskFilter }>({
     mutationFn: async ({ query, filters }: { query: string; filters?: TaskFilter }) => {
       const result = await window.api.searchTasks(query, filters)
-      return unwrap(result)
+      return unwrap(result) as Task[]
     },
   })
 }
@@ -472,21 +449,21 @@ export function useSearchTasks(): UseMutationResult<
 export function useStatsQuery(
   period: 'day' | 'week' | 'month'
 ): UseQueryResult<StatsSummary> {
-  return useQuery({
+  return useQuery<StatsSummary>({
     queryKey: queryKeys.stats(period),
     queryFn: async () => {
       const result = await window.api.getStats(period)
-      return unwrap(result)
+      return unwrap(result) as StatsSummary
     },
   })
 }
 
 export function useDailyTrendQuery(days: number): UseQueryResult<DailyTrend[]> {
-  return useQuery({
+  return useQuery<DailyTrend[]>({
     queryKey: queryKeys.dailyTrend(days),
     queryFn: async () => {
       const result = await window.api.getDailyTrend(days)
-      return unwrap(result)
+      return unwrap(result) as DailyTrend[]
     },
   })
 }
@@ -496,17 +473,17 @@ export function useDailyTrendQuery(days: number): UseQueryResult<DailyTrend[]> {
 // ============================================================
 
 export function useExportData(): UseMutationResult<string, Error, void> {
-  return useMutation({
+  return useMutation<string, Error, void>({
     mutationFn: async () => {
       const result = await window.api.exportData()
-      return unwrap(result)
+      return unwrap(result) as string
     },
   })
 }
 
 export function useImportData(): UseMutationResult<void, Error, string> {
   const queryClient = useQueryClient()
-  return useMutation({
+  return useMutation<void, Error, string>({
     mutationFn: async (jsonStr: string) => {
       const result = await window.api.importData(jsonStr)
       unwrap(result)
