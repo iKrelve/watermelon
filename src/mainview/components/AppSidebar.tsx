@@ -276,7 +276,7 @@ export function AppSidebar(): React.JSX.Element {
           <Collapsible defaultOpen className="group/collapsible">
             <SidebarGroup>
               <SidebarGroupLabel asChild>
-                <CollapsibleTrigger className="flex w-full items-center">
+                <CollapsibleTrigger className="flex w-full items-center pr-6">
                   <FolderOpen className="mr-2 size-4" />
                   <span>{t('sidebar.categories')}</span>
                   <ChevronRight className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
