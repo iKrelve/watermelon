@@ -6,7 +6,9 @@ mod utils;
 
 use db::Database;
 use services::notification::NotificationState;
+use commands::SavedWindowGeometry;
 use std::fs;
+use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -41,6 +43,7 @@ pub fn run() {
             // Register state
             app.manage(database);
             app.manage(notification_state);
+            app.manage(SavedWindowGeometry { inner: Mutex::new(None) });
 
             log::info!("小西瓜 app started!");
 

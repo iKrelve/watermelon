@@ -238,8 +238,24 @@ pub fn import_data(db: State<Database>, json_str: String) -> Result<(), String> 
 // Window Commands
 // ============================================================
 
+use std::sync::Mutex;
+
+/// Saved window geometry before entering compact mode, so we can restore it.
+pub struct SavedWindowGeometry {
+    pub inner: Mutex<Option<WindowGeometry>>,
+}
+
+pub struct WindowGeometry {
+    pub position: tauri::PhysicalPosition<i32>,
+    pub size: tauri::PhysicalSize<u32>,
+}
+
 #[tauri::command]
-pub fn set_compact_mode(app: tauri::AppHandle, compact: bool) -> Result<(), String> {
+pub fn set_compact_mode(
+    app: tauri::AppHandle,
+    saved_geometry: State<SavedWindowGeometry>,
+    compact: bool,
+) -> Result<(), String> {
     use tauri::Manager;
 
     let window = app
@@ -247,11 +263,30 @@ pub fn set_compact_mode(app: tauri::AppHandle, compact: bool) -> Result<(), Stri
         .ok_or_else(|| "Main window not found".to_string())?;
 
     if compact {
+        // Save current window position and size before shrinking
+        let position = window.outer_position().ok();
+        let size = window.outer_size().ok();
+        if let (Some(pos), Some(sz)) = (position, size) {
+            let mut saved = saved_geometry.inner.lock().unwrap();
+            *saved = Some(WindowGeometry {
+                position: pos,
+                size: sz,
+            });
+        }
+
         let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(420.0, 600.0)));
         let _ = window.center();
     } else {
-        let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(1200.0, 800.0)));
-        let _ = window.center();
+        // Restore previous window position and size
+        let saved = saved_geometry.inner.lock().unwrap().take();
+        if let Some(geo) = saved {
+            let _ = window.set_size(tauri::Size::Physical(geo.size));
+            let _ = window.set_position(tauri::Position::Physical(geo.position));
+        } else {
+            // Fallback: default size + center
+            let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(1200.0, 800.0)));
+            let _ = window.center();
+        }
     }
 
     Ok(())
