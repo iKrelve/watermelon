@@ -1,9 +1,9 @@
 // ============================================================
-// Electrobun RPC Client for 小西瓜 WebView (Renderer)
-// Replaces the old Electron preload/contextBridge pattern
+// Tauri v2 IPC Client for 小西瓜 WebView
+// Replaces the old Electrobun RPC pattern with Tauri invoke commands
 // ============================================================
 
-import Electrobun, { Electroview } from 'electrobun/view'
+import { invoke } from '@tauri-apps/api/core'
 
 import type {
   CreateTaskInput,
@@ -15,14 +15,6 @@ import type {
   TaskFilter,
   ReorderTaskItem,
 } from '../shared/types'
-import type { WatermelonRPC } from '../shared/rpc-schema'
-
-const rpc = Electroview.defineRPC<WatermelonRPC>({
-  maxRequestTime: 10000,
-  handlers: { requests: {}, messages: {} },
-})
-
-export const electrobun = new Electrobun.Electroview({ rpc })
 
 // ============================================================
 // Compatibility API Layer
@@ -31,65 +23,59 @@ export const electrobun = new Electrobun.Electroview({ rpc })
 
 export const api = {
   // Task operations
-  createTask: (data: CreateTaskInput) => electrobun.rpc!.request.createTask({ data }),
-  updateTask: (id: string, data: UpdateTaskInput) =>
-    electrobun.rpc!.request.updateTask({ id, data }),
-  deleteTask: (id: string) => electrobun.rpc!.request.deleteTask({ id }),
-  getTasks: (filter?: TaskFilter) => electrobun.rpc!.request.getTasks({ filter }),
-  getTaskById: (id: string) => electrobun.rpc!.request.getTaskById({ id }),
-  completeTask: (id: string) => electrobun.rpc!.request.completeTask({ id }),
-  uncompleteTask: (id: string) => electrobun.rpc!.request.uncompleteTask({ id }),
-  reorderTasks: (items: ReorderTaskItem[]) => electrobun.rpc!.request.reorderTasks({ items }),
+  createTask: (data: CreateTaskInput) => invoke('create_task', { data }),
+  updateTask: (id: string, data: UpdateTaskInput) => invoke('update_task', { id, data }),
+  deleteTask: (id: string) => invoke('delete_task', { id }),
+  getTasks: (filter?: TaskFilter) => invoke('get_tasks', { filter }),
+  getTaskById: (id: string) => invoke('get_task_by_id', { id }),
+  completeTask: (id: string) => invoke('complete_task', { id }),
+  uncompleteTask: (id: string) => invoke('uncomplete_task', { id }),
+  reorderTasks: (items: ReorderTaskItem[]) => invoke('reorder_tasks', { items }),
 
   // Sub-task operations
   createSubTask: (taskId: string, data: CreateSubTaskInput, parentId?: string) =>
-    electrobun.rpc!.request.createSubTask({ taskId, data, parentId }),
+    invoke('create_sub_task', { taskId, data, parentId }),
   updateSubTask: (id: string, data: UpdateSubTaskInput) =>
-    electrobun.rpc!.request.updateSubTask({ id, data }),
-  deleteSubTask: (id: string) => electrobun.rpc!.request.deleteSubTask({ id }),
+    invoke('update_sub_task', { id, data }),
+  deleteSubTask: (id: string) => invoke('delete_sub_task', { id }),
 
   // Category operations
-  createCategory: (data: CreateCategoryInput) =>
-    electrobun.rpc!.request.createCategory({ data }),
+  createCategory: (data: CreateCategoryInput) => invoke('create_category', { data }),
   updateCategory: (id: string, data: UpdateCategoryInput) =>
-    electrobun.rpc!.request.updateCategory({ id, data }),
-  deleteCategory: (id: string) => electrobun.rpc!.request.deleteCategory({ id }),
-  getCategories: () => electrobun.rpc!.request.getCategories({}),
+    invoke('update_category', { id, data }),
+  deleteCategory: (id: string) => invoke('delete_category', { id }),
+  getCategories: () => invoke('get_categories'),
 
   // Tag operations
-  createTag: (name: string, color?: string) =>
-    electrobun.rpc!.request.createTag({ name, color }),
+  createTag: (name: string, color?: string) => invoke('create_tag', { name, color }),
   updateTag: (id: string, name: string, color?: string) =>
-    electrobun.rpc!.request.updateTag({ id, name, color }),
-  deleteTag: (id: string) => electrobun.rpc!.request.deleteTag({ id }),
-  getTags: () => electrobun.rpc!.request.getTags({}),
+    invoke('update_tag', { id, name, color }),
+  deleteTag: (id: string) => invoke('delete_tag', { id }),
+  getTags: () => invoke('get_tags'),
   addTagToTask: (taskId: string, tagId: string) =>
-    electrobun.rpc!.request.addTagToTask({ taskId, tagId }),
+    invoke('add_tag_to_task', { taskId, tagId }),
   removeTagFromTask: (taskId: string, tagId: string) =>
-    electrobun.rpc!.request.removeTagFromTask({ taskId, tagId }),
+    invoke('remove_tag_from_task', { taskId, tagId }),
 
   // Search
   searchTasks: (query?: string, filters?: TaskFilter) =>
-    electrobun.rpc!.request.searchTasks({ query, filters }),
+    invoke('search_tasks', { query, filters }),
 
   // Notifications
   scheduleNotification: (taskId: string, title: string, reminderTime: string) =>
-    electrobun.rpc!.request.scheduleNotification({ taskId, title, reminderTime }),
-  cancelNotification: (taskId: string) =>
-    electrobun.rpc!.request.cancelNotification({ taskId }),
+    invoke('schedule_notification', { taskId, title, reminderTime }),
+  cancelNotification: (taskId: string) => invoke('cancel_notification', { taskId }),
 
   // Statistics
-  getStats: (period: 'day' | 'week' | 'month') =>
-    electrobun.rpc!.request.getStats({ period }),
-  getDailyTrend: (days: number) => electrobun.rpc!.request.getDailyTrend({ days }),
+  getStats: (period: 'day' | 'week' | 'month') => invoke('get_stats', { period }),
+  getDailyTrend: (days: number) => invoke('get_daily_trend', { days }),
 
   // Data management
-  exportData: () => electrobun.rpc!.request.exportData({}),
-  importData: (jsonStr: string) => electrobun.rpc!.request.importData({ jsonStr }),
+  exportData: () => invoke('export_data'),
+  importData: (jsonStr: string) => invoke('import_data', { jsonStr }),
 
   // Window
-  setCompactMode: (compact: boolean) =>
-    electrobun.rpc!.request.setCompactMode({ compact }),
+  setCompactMode: (compact: boolean) => invoke('set_compact_mode', { compact }),
 }
 
 // Expose on window for backward compatibility with existing code

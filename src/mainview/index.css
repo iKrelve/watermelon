@@ -136,7 +136,7 @@
   }
 
   /* macOS native-feel: title bar drag region */
-  /* Electrobun uses class `.electrobun-webkit-app-region-drag` or inline `app-region: drag` */
+  /* Tauri v2 uses `data-tauri-drag-region` attribute; CSS `app-region: drag` as fallback */
   .drag-region {
     app-region: drag;
   }

@@ -197,7 +197,7 @@ export function AppSidebar(): React.JSX.Element {
     <>
       <Sidebar collapsible="icon" className="border-r border-sidebar-border">
         {/* macOS drag region — accounts for hidden title bar + traffic lights */}
-        <div className="electrobun-webkit-app-region-drag drag-region h-[38px] shrink-0" />
+        <div data-tauri-drag-region className="drag-region h-[38px] shrink-0" />
 
         {/* App Header */}
         <SidebarHeader className="px-4 pb-2 pt-0">

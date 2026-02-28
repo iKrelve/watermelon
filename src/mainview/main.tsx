@@ -5,7 +5,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ThemeProvider } from './components/ThemeProvider'
 import { Toaster } from './components/ui/sonner'
 import App from './App'
-// Initialize Electrobun RPC before anything else
+// Initialize Tauri IPC before anything else
 import './rpc'
 import './i18n'
 import './index.css'

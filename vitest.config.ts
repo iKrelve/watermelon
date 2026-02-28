@@ -6,14 +6,13 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/__tests__/**/*.test.ts'],
-    exclude: ['node_modules', 'out', 'dist'],
+    exclude: ['node_modules', 'out', 'dist', 'src-tauri'],
     testTimeout: 10000,
   },
   resolve: {
     alias: {
       '@/': resolve(__dirname, 'src/mainview') + '/',
       '@shared': resolve(__dirname, 'src/shared'),
-      '@bun': resolve(__dirname, 'src/bun'),
     },
   },
 })
