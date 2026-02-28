@@ -112,10 +112,7 @@ export function NoteEditor({
       TableHeader,
       TableCell,
       Highlight.configure({
-        multicolor: false,
-        HTMLAttributes: {
-          class: 'bg-yellow-200 dark:bg-yellow-800/60 rounded px-0.5',
-        },
+        multicolor: true,
       }),
       TextStyle,
       Color,
@@ -138,7 +135,9 @@ export function NoteEditor({
           '[&_th]:border [&_th]:border-border/60 [&_th]:p-2 [&_th]:bg-muted/30 [&_th]:font-medium',
           '[&_td]:border [&_td]:border-border/60 [&_td]:p-2',
           // Image styles
-          '[&_img]:rounded-md [&_img]:max-w-full'
+          '[&_img]:rounded-md [&_img]:max-w-full',
+          // Highlight (mark) styles
+          '[&_mark]:rounded [&_mark]:px-0.5'
         ),
       },
       handleDrop: (view, event, _slice, moved) => {
@@ -322,12 +321,7 @@ function NoteToolbar({ editor }: { editor: Editor }): React.JSX.Element {
           icon={Strikethrough}
           tooltip={t('editor.strikethrough')}
         />
-        <ToolbarBtn
-          onClick={() => editor.chain().focus().toggleHighlight().run()}
-          isActive={editor.isActive('highlight')}
-          icon={Highlighter}
-          tooltip={t('slashCommand.highlight')}
-        />
+        <HighlightColorButton editor={editor} />
 
         <div className="w-px h-4 bg-border/60 mx-0.5" />
 
@@ -514,6 +508,18 @@ function ImageInsertButton({ editor }: { editor: Editor }): React.JSX.Element {
 // Text Color Button (with color palette popover)
 // ============================================================
 
+const HIGHLIGHT_COLORS = [
+  { name: 'none', value: '' },
+  { name: 'yellow', value: '#fef08a', darkValue: '#854d0e99' },
+  { name: 'green', value: '#bbf7d0', darkValue: '#16653499' },
+  { name: 'blue', value: '#bfdbfe', darkValue: '#1e40af99' },
+  { name: 'purple', value: '#ddd6fe', darkValue: '#5b21b699' },
+  { name: 'pink', value: '#fbcfe8', darkValue: '#9d174d99' },
+  { name: 'orange', value: '#fed7aa', darkValue: '#9a340099' },
+  { name: 'red', value: '#fecaca', darkValue: '#991b1b99' },
+  { name: 'gray', value: '#e5e7eb', darkValue: '#37415199' },
+] as const
+
 const TEXT_COLORS = [
   { name: 'default', value: '' },
   { name: 'gray', value: '#6b7280' },
@@ -526,6 +532,95 @@ const TEXT_COLORS = [
   { name: 'pink', value: '#db2777' },
   { name: 'red', value: '#dc2626' },
 ] as const
+
+function HighlightColorButton({ editor }: { editor: Editor }): React.JSX.Element {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+
+  const currentHighlight =
+    (editor.getAttributes('highlight').color as string | undefined) ?? ''
+
+  const handleColorSelect = (color: string): void => {
+    if (color === '') {
+      editor.chain().focus().unsetHighlight().run()
+    } else {
+      editor.chain().focus().toggleHighlight({ color }).run()
+    }
+    setOpen(false)
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'size-7 rounded relative',
+                editor.isActive('highlight') && 'bg-accent text-accent-foreground'
+              )}
+              tabIndex={-1}
+            >
+              <Highlighter className="size-3.5" />
+              {/* Color indicator bar */}
+              {currentHighlight && (
+                <span
+                  className="absolute bottom-0.5 left-1.5 right-1.5 h-0.5 rounded-full"
+                  style={{ backgroundColor: currentHighlight }}
+                />
+              )}
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="text-xs">
+          {t('editor.highlightColor')}
+        </TooltipContent>
+      </Tooltip>
+      <PopoverContent className="w-auto p-2" align="start">
+        <div className="space-y-1.5">
+          <div className="text-xs font-medium text-muted-foreground px-1">
+            {t('editor.highlightColor')}
+          </div>
+          <div className="grid grid-cols-5 gap-1">
+            {HIGHLIGHT_COLORS.map((c) => (
+              <Tooltip key={c.name}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'size-6 rounded-md border border-border/40 flex items-center justify-center',
+                      'hover:scale-110 transition-transform',
+                      currentHighlight === c.value &&
+                        c.value !== '' &&
+                        'ring-2 ring-primary ring-offset-1 ring-offset-background',
+                      !currentHighlight &&
+                        c.value === '' &&
+                        'ring-2 ring-primary ring-offset-1 ring-offset-background'
+                    )}
+                    style={{
+                      backgroundColor: c.value === '' ? 'transparent' : c.value,
+                    }}
+                    onClick={() => handleColorSelect(c.value)}
+                  >
+                    {c.value === '' && (
+                      <RemoveFormatting className="size-3 text-muted-foreground" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  {t(`editor.highlightColors.${c.name}`)}
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 function TextColorButton({ editor }: { editor: Editor }): React.JSX.Element {
   const { t } = useTranslation()

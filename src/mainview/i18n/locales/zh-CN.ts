@@ -302,6 +302,7 @@ const zhCN = {
     undo: '撤销',
     redo: '重做',
     textColor: '字体颜色',
+    highlightColor: '高亮颜色',
     color: {
       default: '默认',
       gray: '灰色',
@@ -313,6 +314,17 @@ const zhCN = {
       purple: '紫色',
       pink: '粉色',
       red: '红色',
+    },
+    highlightColors: {
+      none: '无高亮',
+      yellow: '黄色',
+      green: '绿色',
+      blue: '蓝色',
+      purple: '紫色',
+      pink: '粉色',
+      orange: '橙色',
+      red: '红色',
+      gray: '灰色',
     },
   },
 

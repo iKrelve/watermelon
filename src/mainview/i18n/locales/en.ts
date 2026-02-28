@@ -302,6 +302,7 @@ const en = {
     undo: 'Undo',
     redo: 'Redo',
     textColor: 'Text color',
+    highlightColor: 'Highlight color',
     color: {
       default: 'Default',
       gray: 'Gray',
@@ -313,6 +314,17 @@ const en = {
       purple: 'Purple',
       pink: 'Pink',
       red: 'Red',
+    },
+    highlightColors: {
+      none: 'No highlight',
+      yellow: 'Yellow',
+      green: 'Green',
+      blue: 'Blue',
+      purple: 'Purple',
+      pink: 'Pink',
+      orange: 'Orange',
+      red: 'Red',
+      gray: 'Gray',
     },
   },
 
