@@ -81,7 +81,7 @@ export function Layout(): React.JSX.Element {
         </div>
 
         {/* Task list fills the compact window */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <TaskList />
         </div>
 
