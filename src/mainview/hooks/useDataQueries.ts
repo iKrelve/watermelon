@@ -29,13 +29,35 @@ import type {
 // Shared unwrap helper
 // ============================================================
 
-function unwrap<T>(result: T | { __error: AppError }): T {
-  if (result && typeof result === 'object' && '__error' in result) {
-    const error = (result as { __error: AppError }).__error
-    toast.error(error.message || i18n.t('error.operationFailed'))
-    throw error
+/**
+ * Identity unwrap — Tauri invoke returns the value directly on success
+ * and throws on error. This helper is kept for backward compatibility.
+ */
+function unwrap<T>(result: T): T {
+  return result
+}
+
+/**
+ * Parse Tauri command errors. Tauri rejects with the error string
+ * from our Rust Result<T, String> commands (JSON-serialized AppError).
+ */
+function handleTauriError(error: unknown): never {
+  if (typeof error === 'string') {
+    try {
+      const parsed = JSON.parse(error) as AppError
+      toast.error(parsed.message || i18n.t('error.operationFailed'))
+      throw parsed
+    } catch (parseErr) {
+      if (parseErr && typeof parseErr === 'object' && 'code' in parseErr) {
+        throw parseErr // Already an AppError from the JSON.parse path
+      }
+      toast.error(error)
+      throw new Error(error)
+    }
   }
-  return result as T
+  const msg = error instanceof Error ? error.message : String(error)
+  toast.error(msg || i18n.t('error.operationFailed'))
+  throw error
 }
 
 // ============================================================
@@ -60,7 +82,7 @@ export function useTasksQuery(): UseQueryResult<Task[]> {
     queryKey: queryKeys.tasks,
     queryFn: async () => {
       const result = await window.api.getTasks()
-      return unwrap(result)
+      return unwrap(result) as Task[]
     },
   })
 }

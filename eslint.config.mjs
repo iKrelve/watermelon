@@ -22,5 +22,5 @@ export default tseslint.config(
       'react-refresh/only-export-components': 'off'
     }
   },
-  { ignores: ['out/', 'dist/', 'node_modules/'] }
+  { ignores: ['out/', 'dist/', 'node_modules/', 'src-tauri/'] }
 )

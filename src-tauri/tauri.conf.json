@@ -1,0 +1,43 @@
+{
+  "productName": "小西瓜",
+  "version": "1.0.0",
+  "identifier": "com.xiao-xigua.watermelon",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:6689",
+    "beforeDevCommand": "bun run vite --port 6689",
+    "beforeBuildCommand": "bun run vite build"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "title": "小西瓜",
+        "width": 1200,
+        "height": 800,
+        "titleBarStyle": "Overlay",
+        "decorations": true,
+        "transparent": false
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "10.15"
+    }
+  },
+  "plugins": {
+    "notification": {
+      "permission": true
+    }
+  }
+}

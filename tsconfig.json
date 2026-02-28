@@ -14,13 +14,13 @@
       "@/*": ["src/mainview/*"],
       "@shared/*": ["src/shared/*"]
     },
-    "types": ["bun-types", "vite/client"]
+    "types": ["vite/client"]
   },
   "include": [
-    "src/**/*",
-    "electrobun.config.ts",
+    "src/mainview/**/*",
+    "src/shared/**/*",
     "vite.config.ts",
     "vitest.config.ts"
   ],
-  "exclude": ["node_modules", "out", "dist"]
+  "exclude": ["node_modules", "out", "dist", "src-tauri"]
 }
