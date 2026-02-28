@@ -238,7 +238,7 @@ export function TaskList(): React.JSX.Element {
   )
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {/* List Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/60">
         <div className="min-w-0">
@@ -262,7 +262,7 @@ export function TaskList(): React.JSX.Element {
       <AddTaskBar />
 
       {/* Task Items */}
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         {sortedTasks.length === 0 ? (
           <EmptyState filterView={filterView} onAddTask={focusAddTask} />
         ) : isDragEnabled ? (
