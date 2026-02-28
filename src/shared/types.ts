@@ -76,6 +76,18 @@ export interface Tag {
   createdAt: string
 }
 
+// --- Note Types ---
+
+export interface Note {
+  id: string
+  title: string
+  content: string
+  isPinned: boolean
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
 // --- Input Types ---
 
 export interface CreateTaskInput {
@@ -125,6 +137,19 @@ export interface UpdateCategoryInput {
   name?: string
   color?: string
   sortOrder?: number
+}
+
+// --- Note Input Types ---
+
+export interface CreateNoteInput {
+  title?: string
+  content?: string
+}
+
+export interface UpdateNoteInput {
+  title?: string
+  content?: string
+  isPinned?: boolean
 }
 
 // --- Filter & Search Types ---

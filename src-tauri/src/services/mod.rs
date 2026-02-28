@@ -5,3 +5,4 @@ pub mod search;
 pub mod notification;
 pub mod statistics;
 pub mod data;
+pub mod note;

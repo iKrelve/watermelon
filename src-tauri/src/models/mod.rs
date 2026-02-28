@@ -230,6 +230,37 @@ pub struct CompleteTaskResult {
 }
 
 // ============================================================
+// Note Types
+// ============================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Note {
+    pub id: String,
+    pub title: String,
+    pub content: String,
+    pub is_pinned: bool,
+    pub sort_order: i64,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateNoteInput {
+    pub title: Option<String>,
+    pub content: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateNoteInput {
+    pub title: Option<String>,
+    pub content: Option<String>,
+    pub is_pinned: Option<bool>,
+}
+
+// ============================================================
 // Data Export/Import
 // ============================================================
 
@@ -243,6 +274,8 @@ pub struct ExportData {
     pub categories: Vec<Category>,
     pub tags: Vec<Tag>,
     pub task_tags: Vec<TaskTagRow>,
+    #[serde(default)]
+    pub notes: Vec<Note>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

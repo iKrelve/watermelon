@@ -156,6 +156,22 @@ fn run_migrations(conn: &Connection) -> Result<(), rusqlite::Error> {
             conn.execute_batch("CREATE INDEX IF NOT EXISTS idx_sub_tasks_parent_id ON sub_tasks(parent_id)")?;
             Ok(())
         })),
+        (5, "Create notes table", Box::new(|conn| {
+            conn.execute_batch(
+                "CREATE TABLE IF NOT EXISTS notes (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL DEFAULT '',
+                    content TEXT NOT NULL DEFAULT '',
+                    is_pinned INTEGER NOT NULL DEFAULT 0,
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+                CREATE INDEX IF NOT EXISTS idx_notes_is_pinned ON notes(is_pinned);
+                CREATE INDEX IF NOT EXISTS idx_notes_updated_at ON notes(updated_at);"
+            )?;
+            Ok(())
+        })),
     ];
 
     let pending: Vec<_> = migrations.into_iter().filter(|(v, _, _)| *v > current_version).collect();

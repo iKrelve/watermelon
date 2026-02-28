@@ -12,12 +12,15 @@ import type {
   Category,
   Tag,
   SubTask,
+  Note,
   CreateTaskInput,
   UpdateTaskInput,
   CreateSubTaskInput,
   UpdateSubTaskInput,
   CreateCategoryInput,
   UpdateCategoryInput,
+  CreateNoteInput,
+  UpdateNoteInput,
   TaskFilter,
   StatsSummary,
   DailyTrend,
@@ -46,6 +49,8 @@ export const queryKeys = {
   taskById: (id: string) => ['tasks', id] as const,
   categories: ['categories'] as const,
   tags: ['tags'] as const,
+  notes: ['notes'] as const,
+  noteById: (id: string) => ['notes', id] as const,
   stats: (period: string) => ['stats', period] as const,
   dailyTrend: (days: number) => ['dailyTrend', days] as const,
 }
@@ -492,7 +497,69 @@ export function useImportData(): UseMutationResult<void, Error, string> {
       queryClient.invalidateQueries({ queryKey: queryKeys.tasks })
       queryClient.invalidateQueries({ queryKey: queryKeys.categories })
       queryClient.invalidateQueries({ queryKey: queryKeys.tags })
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes })
       toast.success(i18n.t('toast.importSuccess'))
+    },
+  })
+}
+
+// ============================================================
+// Note queries
+// ============================================================
+
+export function useNotesQuery(): UseQueryResult<Note[]> {
+  return useQuery<Note[]>({
+    queryKey: queryKeys.notes,
+    queryFn: async () => {
+      const result = await window.api.getNotes()
+      return unwrap(result) as Note[]
+    },
+  })
+}
+
+// ============================================================
+// Note mutations
+// ============================================================
+
+export function useCreateNote(): UseMutationResult<Note, Error, CreateNoteInput> {
+  const queryClient = useQueryClient()
+  return useMutation<Note, Error, CreateNoteInput>({
+    mutationFn: async (data: CreateNoteInput) => {
+      const result = await window.api.createNote(data)
+      return unwrap(result) as Note
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes })
+    },
+  })
+}
+
+export function useUpdateNote(): UseMutationResult<
+  Note,
+  Error,
+  { id: string; data: UpdateNoteInput }
+> {
+  const queryClient = useQueryClient()
+  return useMutation<Note, Error, { id: string; data: UpdateNoteInput }>({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateNoteInput }) => {
+      const result = await window.api.updateNote(id, data)
+      return unwrap(result) as Note
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes })
+    },
+  })
+}
+
+export function useDeleteNote(): UseMutationResult<void, Error, string> {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, string>({
+    mutationFn: async (id: string) => {
+      const result = await window.api.deleteNote(id)
+      unwrap(result)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.notes })
     },
   })
 }

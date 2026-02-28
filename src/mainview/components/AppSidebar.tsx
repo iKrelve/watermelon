@@ -58,6 +58,7 @@ import {
   Moon,
   Monitor,
   RefreshCw,
+  StickyNote,
 } from 'lucide-react'
 
 interface SmartFilterItem {
@@ -73,6 +74,7 @@ const smartFilterKeys: Record<string, string> = {
   upcoming: 'sidebar.upcoming',
   completed: 'sidebar.completed',
   calendar: 'sidebar.calendar',
+  notes: 'sidebar.notes',
 }
 
 const smartFilters: SmartFilterItem[] = [
@@ -104,6 +106,11 @@ const smartFilters: SmartFilterItem[] = [
     id: 'calendar',
     label: '日历',
     icon: <CalendarCheck className="size-4" />,
+  },
+  {
+    id: 'notes',
+    label: '笔记',
+    icon: <StickyNote className="size-4" />,
   },
 ]
 

@@ -16,13 +16,16 @@ export type FilterView =
   | 'tag'
   | 'stats'
   | 'calendar'
+  | 'notes'
 
 interface UIState {
   selectedTaskId: string | null
+  selectedNoteId: string | null
   filterView: FilterView
   filterCategoryId: string | null
   filterTagIds: string[]
   searchQuery: string
+  noteSearchQuery: string
   compactMode: boolean
   commandPaletteOpen: boolean
   language: string
@@ -30,10 +33,12 @@ interface UIState {
 
 interface UIActions {
   selectTask: (id: string | null) => void
+  selectNote: (id: string | null) => void
   setFilterView: (view: FilterView) => void
   setFilterCategory: (id: string | null) => void
   setFilterTags: (ids: string[]) => void
   setSearchQuery: (query: string) => void
+  setNoteSearchQuery: (query: string) => void
   toggleCompactMode: () => void
   toggleCommandPalette: () => void
   setCommandPalette: (open: boolean) => void
@@ -47,16 +52,20 @@ export const useUIStore = create<UIStore>()(
     (set) => ({
       // State
       selectedTaskId: null,
+      selectedNoteId: null,
       filterView: 'all',
       filterCategoryId: null,
       filterTagIds: [],
       searchQuery: '',
+      noteSearchQuery: '',
       compactMode: false,
       commandPaletteOpen: false,
       language: 'zh-CN',
 
       // Actions
       selectTask: (id) => set({ selectedTaskId: id }),
+
+      selectNote: (id) => set({ selectedNoteId: id }),
 
       setFilterView: (view) =>
         set({ filterView: view, selectedTaskId: null }),
@@ -71,6 +80,8 @@ export const useUIStore = create<UIStore>()(
       setFilterTags: (ids) => set({ filterTagIds: ids }),
 
       setSearchQuery: (query) => set({ searchQuery: query }),
+
+      setNoteSearchQuery: (query) => set({ noteSearchQuery: query }),
 
       toggleCompactMode: () =>
         set((state) => {

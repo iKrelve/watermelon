@@ -6,6 +6,8 @@ import { TaskList } from '@/components/task-list'
 import { TaskDetail } from '@/components/TaskDetail'
 import { Statistics } from '@/components/Statistics'
 import { CalendarView } from '@/components/CalendarView'
+import { NoteList } from '@/components/NoteList'
+import { NoteDetail } from '@/components/NoteDetail'
 import { useUIStore } from '@/stores/ui-store'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -124,6 +126,51 @@ export function Layout({ onCheckUpdate, isCheckingUpdate }: LayoutProps): React.
             <div className="flex-1 overflow-hidden">
               <CalendarView />
             </div>
+          </div>
+        </SidebarInset>
+        <CommandPalette />
+      </SidebarProvider>
+    )
+  }
+
+  // Notes view - two-panel layout (list + detail)
+  if (filterView === 'notes') {
+    return (
+      <SidebarProvider defaultOpen={true}>
+        <AppSidebar onCheckUpdate={onCheckUpdate} isCheckingUpdate={isCheckingUpdate} />
+        <SidebarInset>
+          <div className="flex h-screen flex-col overflow-hidden">
+            {/* macOS drag region */}
+            <div data-tauri-drag-region className="drag-region h-[38px] shrink-0" />
+
+            <ResizablePanelGroup
+              orientation="horizontal"
+              className="flex-1"
+            >
+              {/* Left Panel - Note List */}
+              <ResizablePanel
+                id="note-list"
+                defaultSize="35%"
+                minSize="20%"
+                maxSize="50%"
+                className="flex flex-col border-r border-border/60 bg-background"
+              >
+                <NoteList />
+              </ResizablePanel>
+
+              {/* Resize Handle */}
+              <ResizableHandle className="w-px bg-transparent hover:bg-primary/20 active:bg-primary/30 transition-colors" />
+
+              {/* Right Panel - Note Detail */}
+              <ResizablePanel
+                id="note-detail"
+                defaultSize="65%"
+                minSize="30%"
+                className="flex flex-col bg-background"
+              >
+                <NoteDetail />
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </div>
         </SidebarInset>
         <CommandPalette />

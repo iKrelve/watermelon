@@ -20,6 +20,7 @@ import {
   useUncompleteTask,
   useExportData,
   useImportData,
+  useCreateNote,
 } from '@/hooks/useDataQueries'
 import {
   ListTodo,
@@ -36,6 +37,7 @@ import {
   Upload,
   Sun,
   Moon,
+  StickyNote,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTheme } from '@/components/ThemeProvider'
@@ -60,6 +62,9 @@ export function CommandPalette(): React.JSX.Element {
   const uncompleteTaskMut = useUncompleteTask()
   const exportDataMut = useExportData()
   const importDataMut = useImportData()
+
+  const selectNote = useUIStore((s) => s.selectNote)
+  const createNoteMut = useCreateNote()
 
   const { theme, setTheme } = useTheme()
   const open = commandPaletteOpen
@@ -230,6 +235,10 @@ export function CommandPalette(): React.JSX.Element {
             <BarChart3 className="size-4" />
             <span>{t('command.statistics')}</span>
           </CommandItem>
+          <CommandItem onSelect={() => handleNavigate('notes')}>
+            <StickyNote className="size-4" />
+            <span>{t('command.notes')}</span>
+          </CommandItem>
         </CommandGroup>
 
         {/* Categories */}
@@ -276,6 +285,20 @@ export function CommandPalette(): React.JSX.Element {
             <Plus className="size-4" />
             <span>{t('command.newTask')}</span>
             <CommandShortcut>⌘N</CommandShortcut>
+          </CommandItem>
+          <CommandItem onSelect={async () => {
+            setOpen(false)
+            try {
+              const note = await createNoteMut.mutateAsync({})
+              setFilterView('notes')
+              setFilterCategory(null)
+              selectNote(note.id)
+            } catch {
+              // handled globally
+            }
+          }}>
+            <StickyNote className="size-4" />
+            <span>{t('command.newNote')}</span>
           </CommandItem>
           {selectedTask && selectedTask.status === 'todo' && (
             <CommandItem onSelect={handleCompleteSelected}>

@@ -7,6 +7,7 @@ pub fn export_data(conn: &Connection) -> Result<String, AppError> {
     let all_categories = query_all_categories_raw(conn)?;
     let all_tags = query_all_tags_raw(conn)?;
     let all_task_tags = query_all_task_tags(conn)?;
+    let all_notes = query_all_notes_raw(conn)?;
 
     let data = ExportData {
         version: 1,
@@ -16,6 +17,7 @@ pub fn export_data(conn: &Connection) -> Result<String, AppError> {
         categories: all_categories,
         tags: all_tags,
         task_tags: all_task_tags,
+        notes: all_notes,
     };
 
     serde_json::to_string_pretty(&data)
@@ -76,6 +78,18 @@ pub fn import_data(conn: &Connection, json_str: &str) -> Result<(), AppError> {
         let _ = conn.execute(
             "INSERT OR IGNORE INTO task_tags (task_id, tag_id) VALUES (?1, ?2)",
             params![tt.task_id, tt.tag_id],
+        );
+    }
+
+    // Import notes
+    for note in &data.notes {
+        let _ = conn.execute(
+            "INSERT OR IGNORE INTO notes (id, title, content, is_pinned, sort_order, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+            params![
+                note.id, note.title, note.content, note.is_pinned as i64,
+                note.sort_order, note.created_at, note.updated_at,
+            ],
         );
     }
 
@@ -167,6 +181,28 @@ fn query_all_tags_raw(conn: &Connection) -> Result<Vec<Tag>, AppError> {
                 name: row.get("name")?,
                 color: row.get("color")?,
                 created_at: row.get("created_at")?,
+            })
+        })
+        .map_err(|e| AppError { code: "DB_ERROR".into(), message: e.to_string(), details: None })?
+        .filter_map(|r| r.ok())
+        .collect();
+    Ok(rows)
+}
+
+fn query_all_notes_raw(conn: &Connection) -> Result<Vec<Note>, AppError> {
+    let mut stmt = conn.prepare("SELECT * FROM notes")
+        .map_err(|e| AppError { code: "DB_ERROR".into(), message: e.to_string(), details: None })?;
+    let rows: Vec<Note> = stmt
+        .query_map([], |row| {
+            let is_pinned_int: i64 = row.get("is_pinned")?;
+            Ok(Note {
+                id: row.get("id")?,
+                title: row.get("title")?,
+                content: row.get("content")?,
+                is_pinned: is_pinned_int != 0,
+                sort_order: row.get("sort_order")?,
+                created_at: row.get("created_at")?,
+                updated_at: row.get("updated_at")?,
             })
         })
         .map_err(|e| AppError { code: "DB_ERROR".into(), message: e.to_string(), details: None })?

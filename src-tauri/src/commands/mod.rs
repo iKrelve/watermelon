@@ -1,7 +1,7 @@
 use tauri::State;
 use crate::db::Database;
 use crate::models::*;
-use crate::services::{task, category, tag, search, statistics, data, notification};
+use crate::services::{task, category, tag, search, statistics, data, notification, note};
 use crate::services::notification::NotificationState;
 
 // Commands return Result<T, String> where the String is a JSON-serialized AppError.
@@ -232,6 +232,46 @@ pub fn export_data(db: State<Database>) -> Result<String, String> {
 pub fn import_data(db: State<Database>, json_str: String) -> Result<(), String> {
     let conn = db.conn.lock().unwrap();
     data::import_data(&conn, &json_str).map_err(|e| serde_json::to_string(&e).unwrap_or(e.message))
+}
+
+// ============================================================
+// Note Commands
+// ============================================================
+
+#[tauri::command]
+pub fn create_note(db: State<Database>, data: CreateNoteInput) -> Result<Note, String> {
+    let conn = db.conn.lock().unwrap();
+    note::create_note(&conn, data).map_err(|e| serde_json::to_string(&e).unwrap_or(e.message))
+}
+
+#[tauri::command]
+pub fn update_note(db: State<Database>, id: String, data: UpdateNoteInput) -> Result<Note, String> {
+    let conn = db.conn.lock().unwrap();
+    note::update_note(&conn, &id, data).map_err(|e| serde_json::to_string(&e).unwrap_or(e.message))
+}
+
+#[tauri::command]
+pub fn delete_note(db: State<Database>, id: String) -> Result<(), String> {
+    let conn = db.conn.lock().unwrap();
+    note::delete_note(&conn, &id).map_err(|e| serde_json::to_string(&e).unwrap_or(e.message))
+}
+
+#[tauri::command]
+pub fn get_notes(db: State<Database>) -> Result<Vec<Note>, String> {
+    let conn = db.conn.lock().unwrap();
+    note::get_all_notes(&conn).map_err(|e| serde_json::to_string(&e).unwrap_or(e.message))
+}
+
+#[tauri::command]
+pub fn get_note_by_id(db: State<Database>, id: String) -> Result<Option<Note>, String> {
+    let conn = db.conn.lock().unwrap();
+    note::get_note_by_id(&conn, &id).map_err(|e| serde_json::to_string(&e).unwrap_or(e.message))
+}
+
+#[tauri::command]
+pub fn search_notes(db: State<Database>, query: Option<String>) -> Result<Vec<Note>, String> {
+    let conn = db.conn.lock().unwrap();
+    note::search_notes(&conn, query).map_err(|e| serde_json::to_string(&e).unwrap_or(e.message))
 }
 
 // ============================================================

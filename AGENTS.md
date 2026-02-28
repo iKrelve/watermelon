@@ -3,7 +3,7 @@
 ## Project Overview
 
 小西瓜（Watermelon）是一款面向 macOS 的极简 Todo 管理桌面应用，UI 风格参考 Things 3。
-支持任务分类、标签、子任务、重复任务、提醒通知、统计视图、简洁模式等功能。
+支持任务分类、标签、子任务、重复任务、提醒通知、统计视图、简洁模式、独立笔记模块等功能。
 
 **Tech stack**: Tauri v2 (Rust + WebView) / React 19 + TypeScript 5.9 / Vite 7 / Tailwind CSS v4 / shadcn/ui
 **Package manager**: Bun (use `bun install`)
@@ -17,7 +17,7 @@
 | Frontend | React 19 + TypeScript 5.9, Vite 7 |
 | CSS | Tailwind CSS v4 (CSS-first, `@tailwindcss/vite` plugin) |
 | Components | shadcn/ui (new-york style, Radix UI) + lucide-react icons |
-| Rich Text | TipTap (@tiptap/react + starter-kit + task-list) |
+| Rich Text | TipTap (@tiptap/react + starter-kit + task-list + image + link + table + highlight) |
 | State | Zustand 5 (UI state) + @tanstack/react-query 5 (server state) |
 | Drag & Drop | @dnd-kit/core + @dnd-kit/sortable |
 | Charts | recharts |
@@ -81,7 +81,7 @@ watermelon/
 │       ├── lib.rs                # Tauri Builder: plugin/state registration, generate_handler!
 │       ├── db/mod.rs             # SQLite init, schema, migrations
 │       ├── models/mod.rs         # All domain structs & input/filter/error types
-│       ├── services/             # Business logic (task, category, tag, search, statistics, data, notification)
+│       ├── services/             # Business logic (task, category, tag, search, statistics, data, notification, note)
 │       ├── commands/mod.rs       # All #[tauri::command] handlers (~30 commands)
 │       └── utils/recurrence.rs   # Recurrence rule calculation
 │
@@ -111,7 +111,10 @@ watermelon/
 │       │   ├── Statistics.tsx    # Stats dashboard (recharts)
 │       │   ├── CommandPalette.tsx # Cmd+K command palette
 │       │   ├── CategoryDialog.tsx # Category CRUD dialog
-│       │   ├── RichTextEditor.tsx # TipTap rich text editor
+│       │   ├── RichTextEditor.tsx # TipTap rich text editor (task descriptions)
+│       │   ├── NoteEditor.tsx    # Enhanced TipTap editor (notes: image/link/table/highlight)
+│       │   ├── NoteList.tsx      # Note list panel (search + card list)
+│       │   ├── NoteDetail.tsx    # Note detail panel (title + editor + auto-save)
 │       │   ├── ThemeProvider.tsx  # Dark/light theme (next-themes)
 │       │   ├── UpdateDialog.tsx   # Auto-update dialog
 │       │   ├── ErrorBoundary.tsx  # React error boundary
@@ -222,7 +225,7 @@ watermelon/
 ### Database
 
 - **Engine**: rusqlite (bundled SQLite, WAL mode, foreign keys ON)
-- **Tables**: `tasks`, `sub_tasks`, `categories`, `tags`, `task_tags`
+- **Tables**: `tasks`, `sub_tasks`, `categories`, `tags`, `task_tags`, `notes`
 - **Migrations**: `schema_version` 表跟踪，`run_migrations()` 执行增量迁移
 - **Location**: `app.path().app_data_dir()` / `watermelon.db`
 
@@ -230,8 +233,8 @@ watermelon/
 
 | 类型 | 工具 | 文件 | 用途 |
 |-----|------|------|------|
-| UI state | Zustand | `stores/ui-store.ts` | filterView, selectedTask, compactMode, searchQuery, language |
-| Server state | React Query | `hooks/useDataQueries.ts` | tasks, categories, tags, stats CRUD |
+| UI state | Zustand | `stores/ui-store.ts` | filterView, selectedTask, selectedNote, compactMode, searchQuery, language |
+| Server state | React Query | `hooks/useDataQueries.ts` | tasks, categories, tags, notes, stats CRUD |
 | Query client | React Query | `context/AppContext.tsx` | QueryClientProvider (staleTime=30s) |
 
 ### Coding Style

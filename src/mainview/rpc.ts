@@ -12,6 +12,8 @@ import type {
   UpdateSubTaskInput,
   CreateCategoryInput,
   UpdateCategoryInput,
+  CreateNoteInput,
+  UpdateNoteInput,
   TaskFilter,
   ReorderTaskItem,
 } from '../shared/types'
@@ -73,6 +75,14 @@ export const api = {
   // Data management
   exportData: () => invoke('export_data'),
   importData: (jsonStr: string) => invoke('import_data', { jsonStr }),
+
+  // Note operations
+  createNote: (data: CreateNoteInput) => invoke('create_note', { data }),
+  updateNote: (id: string, data: UpdateNoteInput) => invoke('update_note', { id, data }),
+  deleteNote: (id: string) => invoke('delete_note', { id }),
+  getNotes: () => invoke('get_notes'),
+  getNoteById: (id: string) => invoke('get_note_by_id', { id }),
+  searchNotes: (query?: string) => invoke('search_notes', { query }),
 
   // Window
   setCompactMode: (compact: boolean) => invoke('set_compact_mode', { compact }),
