@@ -5,6 +5,7 @@ import {
   getPriorityLabel,
   getPriorityBadgeClasses,
   getPriorityStripeColor,
+  getPriorityCheckboxClasses,
 } from '@/utils/priority'
 import { isOverdue } from '@/utils/date-filters'
 import { format, parseISO } from 'date-fns'
@@ -134,9 +135,7 @@ export function TaskItemContent({
             aria-label={isCompleted ? t('task.markIncomplete') : t('task.markComplete')}
             className={cn(
               'size-[18px] rounded-full transition-colors',
-              task.priority === 'high' && 'border-red-400 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500',
-              task.priority === 'medium' && 'border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500',
-              task.priority === 'low' && 'border-blue-400 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500'
+              getPriorityCheckboxClasses(task.priority)
             )}
           />
         </div>

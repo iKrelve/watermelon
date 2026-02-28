@@ -11,14 +11,10 @@ import {
 } from '@/components/ui/context-menu'
 import { Trash2, Flag, CheckCheck, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getPriorityColor } from '@/utils/priority'
 import type { Priority } from '@shared/types'
 
-const PRIORITY_OPTIONS: { value: Priority; color: string }[] = [
-  { value: 'high', color: 'text-red-500' },
-  { value: 'medium', color: 'text-amber-500' },
-  { value: 'low', color: 'text-blue-500' },
-  { value: 'none', color: 'text-muted-foreground' },
-]
+const PRIORITY_OPTIONS: Priority[] = ['high', 'medium', 'low', 'none']
 
 export function TaskContextMenu({
   children,
@@ -57,13 +53,13 @@ export function TaskContextMenu({
             {t('contextMenu.setPriority')}
           </ContextMenuSubTrigger>
           <ContextMenuSubContent className="w-36">
-            {PRIORITY_OPTIONS.map((opt) => (
+            {PRIORITY_OPTIONS.map((p) => (
               <ContextMenuItem
-                key={opt.value}
-                onClick={() => onBatchSetPriority(opt.value)}
+                key={p}
+                onClick={() => onBatchSetPriority(p)}
               >
-                <Flag className={cn('mr-2 size-4', opt.color)} />
-                {t(`priority.${opt.value}`)}
+                <Flag className={cn('mr-2 size-4', getPriorityColor(p))} />
+                {t(`priority.${p}`)}
               </ContextMenuItem>
             ))}
           </ContextMenuSubContent>

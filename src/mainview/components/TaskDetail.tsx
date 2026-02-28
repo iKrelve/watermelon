@@ -44,6 +44,7 @@ import {
 import {
   getPriorityColor,
   getPriorityBadgeClasses,
+  getPriorityDotColor,
 } from '@/utils/priority'
 import { format, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
@@ -346,9 +347,7 @@ export function TaskDetail(): React.JSX.Element {
                       <span
                         className={cn(
                           'size-2 rounded-full',
-                          p === 'high' && 'bg-red-500',
-                          p === 'medium' && 'bg-amber-500',
-                          p === 'low' && 'bg-blue-500'
+                          getPriorityDotColor(p)
                         )}
                       />
                     )}

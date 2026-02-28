@@ -344,6 +344,15 @@ const zhCN = {
     error: '更新失败：{{message}}',
   },
 
+  // Theme
+  theme: {
+    appleLight: '苹果亮色',
+    appleDark: '苹果暗色',
+    pastel: '柔和马卡龙',
+    midnight: '深邃午夜',
+    system: '跟随系统',
+  },
+
   // Toast
   toast: {
     importSuccess: '数据导入成功',

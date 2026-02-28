@@ -28,16 +28,17 @@ export function sortByPriority(tasks: Task[], order: 'asc' | 'desc' = 'asc'): Ta
 }
 
 /**
- * Get color class for a priority level.
+ * Get text color class for a priority level.
+ * Uses semantic CSS variable-backed Tailwind classes.
  */
 export function getPriorityColor(priority: Priority): string {
   switch (priority) {
     case 'high':
-      return 'text-red-500'
+      return 'text-priority-high'
     case 'medium':
-      return 'text-amber-500'
+      return 'text-priority-medium'
     case 'low':
-      return 'text-blue-500'
+      return 'text-priority-low'
     case 'none':
     default:
       return 'text-muted-foreground'
@@ -63,16 +64,16 @@ export function getPriorityLabel(priority: Priority): string {
 
 /**
  * Get badge classes with colored background for a priority level.
- * Returns Tailwind classes for both light and dark mode.
+ * Uses semantic CSS variable-backed Tailwind classes for both light and dark mode.
  */
 export function getPriorityBadgeClasses(priority: Priority): string {
   switch (priority) {
     case 'high':
-      return 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+      return 'bg-priority-high/15 text-priority-high'
     case 'medium':
-      return 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+      return 'bg-priority-medium/15 text-priority-medium'
     case 'low':
-      return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
+      return 'bg-priority-low/15 text-priority-low'
     case 'none':
     default:
       return ''
@@ -81,15 +82,50 @@ export function getPriorityBadgeClasses(priority: Priority): string {
 
 /**
  * Get stripe (left border bar) background color class for a priority level.
+ * Uses semantic CSS variable-backed Tailwind classes.
  */
 export function getPriorityStripeColor(priority: Priority): string {
   switch (priority) {
     case 'high':
-      return 'bg-red-500'
+      return 'bg-priority-high'
     case 'medium':
-      return 'bg-amber-500'
+      return 'bg-priority-medium'
     case 'low':
-      return 'bg-blue-500'
+      return 'bg-priority-low'
+    case 'none':
+    default:
+      return ''
+  }
+}
+
+/**
+ * Get border color class for priority checkbox.
+ */
+export function getPriorityCheckboxClasses(priority: Priority): string {
+  switch (priority) {
+    case 'high':
+      return 'border-priority-high data-[state=checked]:bg-priority-high data-[state=checked]:border-priority-high'
+    case 'medium':
+      return 'border-priority-medium data-[state=checked]:bg-priority-medium data-[state=checked]:border-priority-medium'
+    case 'low':
+      return 'border-priority-low data-[state=checked]:bg-priority-low data-[state=checked]:border-priority-low'
+    case 'none':
+    default:
+      return ''
+  }
+}
+
+/**
+ * Get background color class for priority dot indicator.
+ */
+export function getPriorityDotColor(priority: Priority): string {
+  switch (priority) {
+    case 'high':
+      return 'bg-priority-high'
+    case 'medium':
+      return 'bg-priority-medium'
+    case 'low':
+      return 'bg-priority-low'
     case 'none':
     default:
       return ''

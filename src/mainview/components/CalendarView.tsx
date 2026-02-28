@@ -165,12 +165,12 @@ function CalendarGrid({
                                 task.status === 'completed'
                                   ? 'bg-muted-foreground/30'
                                   : task.priority === 'high'
-                                    ? 'bg-red-400'
-                                    : task.priority === 'medium'
-                                      ? 'bg-amber-400'
-                                      : task.priority === 'low'
-                                        ? 'bg-blue-400'
-                                        : 'bg-primary/50'
+? 'bg-priority-high'
+: task.priority === 'medium'
+? 'bg-priority-medium'
+: task.priority === 'low'
+? 'bg-priority-low'
+: 'bg-primary/50'
                               )}
                             />
                           ))
@@ -179,7 +179,7 @@ function CalendarGrid({
                             <div
                               className={cn(
                                 'w-full max-w-[48px] h-1.5 rounded-sm',
-                                hasHighPriority ? 'bg-red-400' : 'bg-primary/50'
+                                hasHighPriority ? 'bg-priority-high' : 'bg-primary/50'
                               )}
                             />
                             <span className="text-[9px] text-muted-foreground font-medium">
@@ -431,7 +431,7 @@ export function CalendarView(): React.JSX.Element {
               {t('calendar.monthTotal', { count: monthStats.total })}
             </span>
             {monthStats.completed > 0 && (
-              <span className="text-[11px] text-green-600">
+              <span className="text-[11px] text-status-success">
                 {t('calendar.monthCompleted', { count: monthStats.completed })}
               </span>
             )}

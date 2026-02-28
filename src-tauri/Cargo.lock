@@ -5040,7 +5040,7 @@ dependencies = [
 
 [[package]]
 name = "watermelon"
-version = "1.2.5"
+version = "1.2.6"
 dependencies = [
  "chrono",
  "env_logger",

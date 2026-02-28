@@ -12,7 +12,6 @@ import {
   SidebarMenuAction,
   SidebarMenuBadge,
   SidebarFooter,
-  SidebarSeparator,
 } from '@/components/ui/sidebar'
 import {
   Collapsible,
@@ -25,6 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ThemeSelector } from '@/components/ThemeSelector'
 import { useUIStore, type FilterView } from '@/stores/ui-store'
 import {
   useTasksQuery,
@@ -34,7 +34,6 @@ import {
   useUpdateCategory,
   useDeleteCategory,
 } from '@/hooks/useDataQueries'
-import { useTheme } from '@/components/ThemeProvider'
 import { filterToday, filterUpcoming } from '@/utils/date-filters'
 import { CategoryDialog } from '@/components/CategoryDialog'
 import { useState } from 'react'
@@ -54,9 +53,6 @@ import {
   Trash2,
   ChevronRight,
   Minimize2,
-  Sun,
-  Moon,
-  Monitor,
   RefreshCw,
   StickyNote,
 } from 'lucide-react'
@@ -137,8 +133,6 @@ export function AppSidebar({ onCheckUpdate, isCheckingUpdate }: AppSidebarProps)
   const updateCategoryMut = useUpdateCategory()
   const deleteCategoryMut = useDeleteCategory()
 
-  const { theme, setTheme } = useTheme()
-
   // Category dialog state
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<{
@@ -208,7 +202,7 @@ export function AppSidebar({ onCheckUpdate, isCheckingUpdate }: AppSidebarProps)
 
   return (
     <>
-      <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+      <Sidebar collapsible="icon" className="border-r border-sidebar-border vibrancy-sidebar">
         {/* macOS drag region — accounts for hidden title bar + traffic lights */}
         <div data-tauri-drag-region className="drag-region h-[38px] shrink-0" />
 
@@ -439,37 +433,7 @@ export function AppSidebar({ onCheckUpdate, isCheckingUpdate }: AppSidebarProps)
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton tooltip={t('sidebar.theme')}>
-                    {theme === 'dark' ? (
-                      <Moon className="size-4" />
-                    ) : theme === 'light' ? (
-                      <Sun className="size-4" />
-                    ) : (
-                      <Monitor className="size-4" />
-                    )}
-                    <span>{t('sidebar.theme')}</span>
-                  </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent side="right" align="end">
-                  <DropdownMenuItem onClick={() => setTheme('light')}>
-                    <Sun className="mr-2 size-4" />
-                    {t('sidebar.themeLight')}
-                    {theme === 'light' && <span className="ml-auto text-xs">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme('dark')}>
-                    <Moon className="mr-2 size-4" />
-                    {t('sidebar.themeDark')}
-                    {theme === 'dark' && <span className="ml-auto text-xs">✓</span>}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setTheme('system')}>
-                    <Monitor className="mr-2 size-4" />
-                    {t('sidebar.themeSystem')}
-                    {theme === 'system' && <span className="ml-auto text-xs">✓</span>}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <ThemeSelector />
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton

@@ -124,7 +124,7 @@ export function Statistics() {
             <CardTitle className="text-xs font-medium text-muted-foreground">
               {t('statistics.completed')}
             </CardTitle>
-            <CheckCircle2 className="size-4 text-emerald-500" />
+            <CheckCircle2 className="size-4 text-status-success" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{stats?.completedTasks ?? 0}</p>
@@ -137,13 +137,13 @@ export function Statistics() {
             <CardTitle className="text-xs font-medium text-muted-foreground">
               {t('statistics.completionRate')}
             </CardTitle>
-            <Target className="size-4 text-blue-500" />
+            <Target className="size-4 text-primary" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">{completionRate}%</p>
             <div className="mt-1 h-1.5 w-full rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-blue-500 transition-all"
+                className="h-full rounded-full bg-primary transition-all"
                 style={{ width: `${completionRate}%` }}
               />
             </div>
@@ -155,7 +155,7 @@ export function Statistics() {
             <CardTitle className="text-xs font-medium text-muted-foreground">
               {t('statistics.pending')}
             </CardTitle>
-            <TrendingUp className="size-4 text-orange-500" />
+            <TrendingUp className="size-4 text-status-warning" />
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
@@ -183,12 +183,12 @@ export function Statistics() {
               <AreaChart data={trend}>
                 <defs>
                   <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--color-status-success)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--color-status-success)" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorCreated" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
@@ -224,7 +224,7 @@ export function Statistics() {
                 <Area
                   type="monotone"
                   dataKey="completed"
-                  stroke="#22c55e"
+                  stroke="var(--color-status-success)"
                   fillOpacity={1}
                   fill="url(#colorCompleted)"
                   strokeWidth={2}
@@ -232,7 +232,7 @@ export function Statistics() {
                 <Area
                   type="monotone"
                   dataKey="created"
-                  stroke="#3b82f6"
+                  stroke="var(--color-primary)"
                   fillOpacity={1}
                   fill="url(#colorCreated)"
                   strokeWidth={2}
@@ -242,11 +242,11 @@ export function Statistics() {
           )}
           <div className="flex items-center justify-center gap-6 mt-3">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="size-2.5 rounded-full bg-emerald-500" />
+              <span className="size-2.5 rounded-full bg-status-success" />
               {t('statistics.completed')}
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="size-2.5 rounded-full bg-blue-500" />
+              <span className="size-2.5 rounded-full bg-primary" />
               {t('statistics.created')}
             </div>
           </div>

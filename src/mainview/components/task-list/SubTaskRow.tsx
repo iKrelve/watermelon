@@ -5,6 +5,7 @@ import {
   getPriorityLabel,
   getPriorityBadgeClasses,
   getPriorityStripeColor,
+  getPriorityCheckboxClasses,
 } from '@/utils/priority'
 import { format, parseISO } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
@@ -75,12 +76,7 @@ export function SubTaskRow({
             onCheckedChange={(checked) => onToggle(subTask.id, checked === true)}
             className={cn(
               'size-3 rounded-full transition-colors',
-              subTask.priority === 'high' &&
-                'border-red-400 data-[state=checked]:bg-red-500 data-[state=checked]:border-red-500',
-              subTask.priority === 'medium' &&
-                'border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500',
-              subTask.priority === 'low' &&
-                'border-blue-400 data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500'
+              getPriorityCheckboxClasses(subTask.priority)
             )}
           />
         </div>

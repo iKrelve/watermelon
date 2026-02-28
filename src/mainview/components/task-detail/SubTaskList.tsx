@@ -140,7 +140,7 @@ export function SubTaskList({ task }: { task: Task }): React.JSX.Element {
 
       {/* All complete indicator */}
       {totalCount > 0 && completedCount === totalCount && (
-        <div className="flex items-center gap-1.5 text-xs text-emerald-600">
+        <div className="flex items-center gap-1.5 text-xs text-status-success">
           <CheckCircle2 className="size-3.5" />
           {t('taskDetail.allSubtasksDone')}
         </div>

@@ -35,12 +35,11 @@ import {
   Trash2,
   Download,
   Upload,
-  Sun,
-  Moon,
   StickyNote,
+  Palette,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useTheme } from '@/components/ThemeProvider'
+import { themePresets } from '@/theme/presets'
 
 export function CommandPalette(): React.JSX.Element {
   const { t } = useTranslation()
@@ -66,7 +65,8 @@ export function CommandPalette(): React.JSX.Element {
   const selectNote = useUIStore((s) => s.selectNote)
   const createNoteMut = useCreateNote()
 
-  const { theme, setTheme } = useTheme()
+  const themePreset = useUIStore((s) => s.themePreset)
+  const setThemePreset = useUIStore((s) => s.setThemePreset)
   const open = commandPaletteOpen
 
   const setOpen = useCallback(
@@ -360,21 +360,16 @@ export function CommandPalette(): React.JSX.Element {
 
         {/* Theme */}
         <CommandGroup heading={t('command.themeGroup')}>
-          <CommandItem onSelect={() => runAndClose(() => setTheme('light'))}>
-            <Sun className="size-4" />
-            <span>{t('command.lightMode')}</span>
-            {theme === 'light' && <CommandShortcut>✓</CommandShortcut>}
-          </CommandItem>
-          <CommandItem onSelect={() => runAndClose(() => setTheme('dark'))}>
-            <Moon className="size-4" />
-            <span>{t('command.darkMode')}</span>
-            {theme === 'dark' && <CommandShortcut>✓</CommandShortcut>}
-          </CommandItem>
-          <CommandItem onSelect={() => runAndClose(() => setTheme('system'))}>
-            <Sun className="size-4" />
-            <span>{t('command.systemMode')}</span>
-            {theme === 'system' && <CommandShortcut>✓</CommandShortcut>}
-          </CommandItem>
+          {themePresets.map((preset) => (
+            <CommandItem
+              key={preset.id}
+              onSelect={() => runAndClose(() => setThemePreset(preset.id))}
+            >
+              <Palette className="size-4" />
+              <span>{t(preset.nameKey)}</span>
+              {themePreset === preset.id && <CommandShortcut>✓</CommandShortcut>}
+            </CommandItem>
+          ))}
         </CommandGroup>
       </CommandList>
     </CommandDialog>

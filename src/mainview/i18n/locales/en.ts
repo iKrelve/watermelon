@@ -344,6 +344,15 @@ const en = {
     error: 'Update failed: {{message}}',
   },
 
+  // Theme
+  theme: {
+    appleLight: 'Apple Light',
+    appleDark: 'Apple Dark',
+    pastel: 'Pastel',
+    midnight: 'Midnight',
+    system: 'System',
+  },
+
   // Toast
   toast: {
     importSuccess: 'Data imported successfully',
