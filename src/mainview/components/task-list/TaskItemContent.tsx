@@ -153,8 +153,8 @@ export function TaskItemContent({
             {task.title}
           </p>
 
-          {/* Description preview (compact mode only) */}
-          {compactMode && task.description && (
+          {/* Description preview (hidden in compact mode) */}
+          {!compactMode && task.description && (
             <p className="text-[11px] leading-snug text-muted-foreground truncate mt-0.5">
               {stripHtml(task.description)}
             </p>

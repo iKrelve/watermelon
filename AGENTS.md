@@ -2,8 +2,11 @@
 
 ## Project Overview
 
-小西瓜是一款面向 macOS 的极简 Todo 管理桌面应用，UI 风格参考 Things 3。
+小西瓜（Watermelon）是一款面向 macOS 的极简 Todo 管理桌面应用，UI 风格参考 Things 3。
 支持任务分类、标签、子任务、重复任务、提醒通知、统计视图、简洁模式等功能。
+
+**Tech stack**: Tauri v2 (Rust + WebView) / React 19 + TypeScript 5.9 / Vite 7 / Tailwind CSS v4 / shadcn/ui
+**Package manager**: Bun (use `bun install`)
 
 ## Tech Stack
 
@@ -14,6 +17,7 @@
 | Frontend | React 19 + TypeScript 5.9, Vite 7 |
 | CSS | Tailwind CSS v4 (CSS-first, `@tailwindcss/vite` plugin) |
 | Components | shadcn/ui (new-york style, Radix UI) + lucide-react icons |
+| Rich Text | TipTap (@tiptap/react + starter-kit + task-list) |
 | State | Zustand 5 (UI state) + @tanstack/react-query 5 (server state) |
 | Drag & Drop | @dnd-kit/core + @dnd-kit/sortable |
 | Charts | recharts |
@@ -25,12 +29,41 @@
 | Auto Update | tauri-plugin-updater + tauri-plugin-process |
 | CI/CD | GitHub Actions (conventional commits → auto version bump → release) |
 
+## Development Commands
+
+### Primary Commands
+
+- `bun run dev` — Start Tauri dev mode (Vite HMR + Rust backend)
+- `bun run vite:dev` — Vite dev server only (port 6689, for frontend-only iteration)
+- `bun run lint` — ESLint check
+- `bun run format` — Prettier format
+- `bun run test` — Run frontend tests (vitest run)
+- `bun run test:watch` — Tests watch mode
+
+### Build Commands (slow — avoid during development)
+
+- `bun run build` — Production build (Tauri build → .app/.dmg)
+- `bun run vite:build` — Frontend build only (→ dist/)
+
+### Backend Tests
+
+```bash
+cd src-tauri && cargo test
+```
+
+### Package Management
+
+- **Install all deps**: `bun install`
+- **Add frontend package**: `bun add <package>`
+- **Add shadcn component**: `bunx --bun shadcn@latest add <component-name>`
+- **Rebuild Rust deps**: `cd src-tauri && cargo build`
+
 ## Project Structure
 
 ```
 watermelon/
-├── AGENTS.md                     # Agent 快速参考（本文件）
-├── CODING_GUIDELINES.md          # Agent 编码规范与端到端开发流程
+├── AGENTS.md                     # Agent 快速参考（本文件）— What & Where
+├── CODING_GUIDELINES.md          # Agent 编码规范与端到端开发流程 — How
 ├── vite.config.ts                # Vite config (React + Tailwind, output → dist/)
 ├── vitest.config.ts              # Vitest test config
 ├── package.json                  # Frontend deps & scripts (Bun)
@@ -39,7 +72,7 @@ watermelon/
 ├── eslint.config.mjs             # ESLint v9 flat config
 ├── .prettierrc                   # Prettier rules
 │
-├── src-tauri/                    # ── Rust Backend ──
+├── src-tauri/                    # ── Rust Backend (Tauri) ──
 │   ├── Cargo.toml
 │   ├── tauri.conf.json           # App config (productName, window, bundle, plugins)
 │   ├── capabilities/default.json # Tauri v2 permissions
@@ -54,6 +87,11 @@ watermelon/
 │
 ├── src/
 │   ├── shared/types.ts           # Shared TS types (mirrors models/mod.rs)
+│   ├── bun/                      # ── Electrobun Backend (alternative runtime) ──
+│   │   ├── index.ts              # Electrobun entry: RPC handlers, window creation
+│   │   ├── db/                   # SQLite init & schema (bun:sqlite)
+│   │   ├── services/             # Business logic (mirrors src-tauri/src/services/)
+│   │   └── utils/                # Mappers, recurrence helpers
 │   └── mainview/                 # ── React App (WebView) ──
 │       ├── main.tsx              # React entry (StrictMode, ErrorBoundary, providers)
 │       ├── rpc.ts                # Tauri invoke wrapper → window.api.*
@@ -64,11 +102,19 @@ watermelon/
 │       ├── context/AppContext.tsx # QueryClientProvider (React Query)
 │       ├── stores/ui-store.ts    # Zustand UI state
 │       ├── i18n/                 # i18next init + zh-CN/en locales
-│       ├── hooks/                # useDataQueries, useKeyboardShortcuts, useAutoUpdate
+│       ├── hooks/                # useDataQueries, useKeyboardShortcuts, useAutoUpdate, use-mobile
 │       ├── components/           # Business components
 │       │   ├── Layout.tsx        # Three-panel layout (Sidebar | TaskList | Detail)
 │       │   ├── AppSidebar.tsx    # Sidebar navigation
 │       │   ├── TaskDetail.tsx    # Task detail panel
+│       │   ├── CalendarView.tsx  # Calendar date-based view
+│       │   ├── Statistics.tsx    # Stats dashboard (recharts)
+│       │   ├── CommandPalette.tsx # Cmd+K command palette
+│       │   ├── CategoryDialog.tsx # Category CRUD dialog
+│       │   ├── RichTextEditor.tsx # TipTap rich text editor
+│       │   ├── ThemeProvider.tsx  # Dark/light theme (next-themes)
+│       │   ├── UpdateDialog.tsx   # Auto-update dialog
+│       │   ├── ErrorBoundary.tsx  # React error boundary
 │       │   ├── task-list/        # Task list sub-components (barrel: index.ts)
 │       │   ├── task-detail/      # Task detail sub-components (barrel: index.ts)
 │       │   └── ui/              # shadcn/ui generated (auto-generated, relaxed lint)
@@ -122,18 +168,41 @@ watermelon/
 | `@/` | `src/mainview/` | `tsconfig.json` + `vite.config.ts` |
 | `@shared/` | `src/shared/` | `tsconfig.json` + `vite.config.ts` |
 
-## Key Commands
+## Strict Code Rules (non-negotiable)
 
-```bash
-bun run dev          # Tauri dev mode (Vite HMR + Rust backend)
-bun run build        # Production build (Tauri build → .app/.dmg)
-bun run vite:dev     # Vite dev server only (port 6689)
-bun run vite:build   # Frontend build only (→ dist/)
-bun run lint         # ESLint check
-bun run format       # Prettier format
-bun run test         # Frontend tests (vitest run)
-bun run test:watch   # Tests watch mode
-```
+### TypeScript / Frontend
+
+- **Never add `@ts-nocheck`** — fix the root cause instead.
+- **Never add `@ts-ignore`** — use proper type narrowing or explicit type assertions.
+- **Never use `any`** without an inline comment explaining why it is unavoidable.
+- **Never add `eslint-disable`** without an inline comment explaining the justification.
+- **Never edit files in `dist/`** — these are generated output. Edit source files instead.
+- **Never manually edit files in `components/ui/`** — these are auto-generated by shadcn/ui. Use `bunx --bun shadcn@latest add <name>` to install or update.
+- **All functions must have explicit return types** — except auto-generated `ui/` components.
+- **All user-visible text must use `t()` i18n** — never hardcode Chinese or English strings.
+
+### Rust / Backend
+
+- **All structs must use `#[serde(rename_all = "camelCase")]`** — ensures automatic snake_case → camelCase conversion for frontend.
+- **Never modify existing database migration entries** — only append new migrations with incremented version numbers.
+- **All new migrations must be idempotent** — check if column/index exists before ALTER.
+- **Rust models and TS types must always be in sync** — when modifying `models/mod.rs`, always update `shared/types.ts` in the same commit.
+
+### General
+
+- **Never commit `console.log` debug statements** — remove before committing.
+- **Never use `eslint-disable-next-line` on more than one consecutive line** — refactor the code instead.
+
+## Command Restrictions
+
+| Forbidden | Reason | Use Instead |
+|-----------|--------|-------------|
+| `bun run build` during dev | Very slow full Tauri build (~5 min) | `bun run dev` or `bun run vite:dev` |
+| `cargo build` alone | Missing Tauri context/plugins | `bun run dev` (runs Tauri dev mode) |
+| Editing `dist/` files | Generated output, overwritten on build | Edit source files in `src/` |
+| Editing `components/ui/*` | Auto-generated by shadcn | `bunx --bun shadcn@latest add <name>` |
+| Editing `node_modules/` | Overwritten on install | Fix in source or patch via `package.json` |
+| `git push` to `master` without checking | Auto-triggers CI release | Verify commit message prefix (`fix:`, `feat:`, `chore:`) |
 
 ## Architecture Conventions
 
@@ -167,31 +236,83 @@ bun run test:watch   # Tests watch mode
 
 ### Coding Style
 
-- TypeScript strict mode; all functions require explicit return types (except `ui/` components)
-- Prettier: no semicolons, single quotes, 2-space indent, trailing commas: none, 100 char width
-- React: function declarations for top-level components (not arrow functions)
-- CSS: Tailwind classes + `cn()` from `@/lib/utils`, no separate CSS files
-- Rust: `cargo fmt`, `#[serde(rename_all = "camelCase")]` on all types
-- shadcn/ui: `bunx --bun shadcn@latest add <name>` to install
+- **TypeScript**: strict mode enabled. Run `bun run lint` after changes to verify.
+- **Prettier**: no semicolons, single quotes, 2-space indent, trailing commas: none, 100 char width. Run `bun run format` to auto-fix.
+- **React**: always use `function` declarations for top-level components (never arrow functions). Always annotate return type as `React.JSX.Element`.
+- **CSS**: Tailwind utility classes only + `cn()` from `@/lib/utils`. Never create separate CSS files.
+- **Rust**: always run `cargo fmt`. Always add `#[serde(rename_all = "camelCase")]` on all types.
+- **shadcn/ui**: install via `bunx --bun shadcn@latest add <name>`. Never copy-paste from docs manually.
 
 ### Window Drag Region
 
 - macOS `titleBarStyle: Overlay` → `data-tauri-drag-region` HTML attribute
-- Interactive elements need `.no-drag` class
+- Interactive elements must have `.no-drag` class
 
 ### App Naming
 
 - 应用名: "小西瓜"，Bundle ID: `com.xiao-xigua.watermelon`
 
-### CI/CD & Release
+## Testing Instructions
 
-推送到 `master` 分支后全自动发版：
-- `fix:` commit → patch (+0.0.1)
-- `feat:` commit → minor (+0.1.0)
-- `BREAKING CHANGE` → major (+1.0.0)
+### Frontend (Vitest)
 
-Pipeline: version bump → update package.json/Cargo.toml/tauri.conf.json → tag → build universal macOS binary → GitHub Release
+- **Run**: `bun run test` (single run) or `bun run test:watch` (watch mode)
+- **Config**: `vitest.config.ts`
+- **Test location**: `src/mainview/utils/__tests__/` (co-located with source)
+- **File naming**: `*.test.ts` or `*.test.tsx`
+- **Property testing**: use `fast-check` for edge-case coverage
+
+### Backend (cargo test)
+
+- **Run**: `cd src-tauri && cargo test`
+- **Test location**: `#[cfg(test)]` module inside each `services/<domain>.rs`
+
+## Git Workflow
+
+### Commit Convention
+
+Must use Conventional Commits — CI auto-bumps version based on prefix:
+
+| Prefix | Version Bump | Use For |
+|--------|-------------|---------|
+| `fix:` | patch (+0.0.1) | Bug fixes |
+| `feat:` | minor (+0.1.0) | New features |
+| `BREAKING CHANGE` | major (+1.0.0) | Breaking changes |
+| `chore:` | none | Tooling, config, docs |
+| `refactor:` | none | Code restructuring |
+
+### CI/CD Pipeline
+
+Push to `master` triggers: version bump → update `package.json` / `Cargo.toml` / `tauri.conf.json` → tag → build universal macOS binary → GitHub Release.
 
 ### Git Identity
 
-- 仓库级配置（非 global）: `user.name = "iKrelve"`, `user.email = "iKrelve@users.noreply.github.com"`
+仓库级配置（非 global）: `user.name = "iKrelve"`, `user.email = "iKrelve@users.noreply.github.com"`
+
+## Dependency Recovery
+
+If dependencies are missing or corrupted:
+
+| Problem | Recovery Command |
+|---------|-----------------|
+| Frontend deps missing | `bun install` |
+| Rust deps missing | `cd src-tauri && cargo build` |
+| shadcn component missing | `bunx --bun shadcn@latest add <component-name>` |
+| Lock file conflict | Delete `bun.lock`, run `bun install` |
+| Rust lock file conflict | Delete `src-tauri/Cargo.lock`, run `cd src-tauri && cargo build` |
+
+## Self-Maintenance of AGENTS.md
+
+**MANDATORY post-task check** — After completing ANY task that changes project structure:
+
+| # | Question (YES = update required) | What to Update |
+|---|----------------------------------|----------------|
+| 1 | Created a new directory? | Add to Project Structure tree |
+| 2 | Added a new public component? | Add to Project Structure tree under `components/` |
+| 3 | Added a new Tauri command? | Verify Quick Reference table is still accurate |
+| 4 | Established a new architectural pattern? | Add to Architecture Conventions |
+| 5 | Changed a convention or tool? | Update affected section |
+| 6 | Added a new dependency with version-specific behavior? | Add to Tech Stack table |
+
+**If ALL answers are NO** — skip update.
+**Do NOT update for**: bug fixes, minor refactors, following existing patterns.
