@@ -1,6 +1,6 @@
 [package]
 name = "watermelon"
-version = "1.0.0"
+version = "1.1.0"
 description = "小西瓜 - macOS 极简 Todo 管理桌面应用"
 authors = []
 license = "MIT"
