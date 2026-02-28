@@ -1,28 +1,121 @@
-name: Release
+name: Auto Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - master
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+
+# Prevent concurrent releases
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  release:
+  # Step 1: Bump version, update files, create tag
+  version:
+    runs-on: ubuntu-latest
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: macos-latest
-            args: --target aarch64-apple-darwin
-          - platform: macos-latest
-            args: --target x86_64-apple-darwin
-          - platform: macos-latest
-            args: --target universal-apple-darwin
-
-    runs-on: ${{ matrix.platform }}
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+      skipped: ${{ steps.bump.outputs.skipped }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version bump
+        id: bump
+        run: |
+          # Get current version from package.json
+          CURRENT=$(jq -r '.version' package.json)
+          echo "Current version: $CURRENT"
+
+          # Parse semver
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+
+          # Get commit messages since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --oneline)
+          else
+            COMMITS=$(git log ${LAST_TAG}..HEAD --oneline)
+          fi
+
+          echo "Commits since last tag:"
+          echo "$COMMITS"
+
+          # Skip if no meaningful commits (e.g. only version bump commits)
+          if echo "$COMMITS" | grep -qE "^[a-f0-9]+ chore: bump version"; then
+            if [ $(echo "$COMMITS" | wc -l) -le 1 ]; then
+              echo "skipped=true" >> "$GITHUB_OUTPUT"
+              echo "Skipping: only version bump commits"
+              exit 0
+            fi
+          fi
+
+          # Determine bump type from conventional commits
+          BUMP="patch"
+          if echo "$COMMITS" | grep -qiE "BREAKING CHANGE|!:"; then
+            BUMP="major"
+          elif echo "$COMMITS" | grep -qiE "^[a-f0-9]+ feat"; then
+            BUMP="minor"
+          fi
+
+          echo "Bump type: $BUMP"
+
+          # Calculate new version
+          case $BUMP in
+            major) NEW_VERSION="$((MAJOR + 1)).0.0" ;;
+            minor) NEW_VERSION="${MAJOR}.$((MINOR + 1)).0" ;;
+            patch) NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))" ;;
+          esac
+
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "skipped=false" >> "$GITHUB_OUTPUT"
+
+      - name: Update version in project files
+        if: steps.bump.outputs.skipped != 'true'
+        run: |
+          NEW_VERSION=${{ steps.bump.outputs.new_version }}
+
+          # Update package.json
+          jq --arg v "$NEW_VERSION" '.version = $v' package.json > tmp.json && mv tmp.json package.json
+
+          # Update src-tauri/Cargo.toml
+          sed -i 's/^version = ".*"/version = "'"$NEW_VERSION"'"/' src-tauri/Cargo.toml
+
+          # Update src-tauri/tauri.conf.json
+          jq --arg v "$NEW_VERSION" '.version = $v' src-tauri/tauri.conf.json > tmp.json && mv tmp.json src-tauri/tauri.conf.json
+
+          echo "Updated all files to version $NEW_VERSION"
+
+      - name: Commit and tag
+        if: steps.bump.outputs.skipped != 'true'
+        run: |
+          NEW_VERSION=${{ steps.bump.outputs.new_version }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json
+          git commit -m "chore: bump version to ${NEW_VERSION}" || echo "No changes to commit"
+          git tag "v${NEW_VERSION}"
+          git push origin master --tags
+
+  # Step 2: Build and release
+  build:
+    needs: version
+    if: needs.version.outputs.skipped != 'true'
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.version.outputs.new_version }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -44,9 +137,12 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: v__VERSION__
-          releaseName: '小西瓜 v__VERSION__'
-          releaseBody: 'See the assets to download and install this version.'
-          releaseDraft: true
+          tagName: v${{ needs.version.outputs.new_version }}
+          releaseName: '小西瓜 v${{ needs.version.outputs.new_version }}'
+          releaseBody: |
+            ## 小西瓜 v${{ needs.version.outputs.new_version }}
+
+            自动构建发布。下载 `.dmg` 文件安装，已安装用户会自动收到更新提示。
+          releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }}
+          args: --target universal-apple-darwin
