@@ -41,7 +41,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDRFMEIwRENCOUU1RTU1RUUKUldUdVZWNmV5dzBMVGhsOExuN0FlRDN5ajJEMmYyQS9BK05oM2hqZWdYd2ZtSjBGNDNFcE55ZXYK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc3RjU4RjlGMzg1OTAyMzQKUldRMEFsazRuNC8xZDhxUFRLYVpMOFNSOGt5ZkNOS05QczNaa2VOb1ZtTHMxNjFkRkhKaklHblEK",
       "endpoints": [
         "https://github.com/iKrelve/watermelon/releases/latest/download/latest.json"
       ]
