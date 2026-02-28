@@ -64,7 +64,7 @@ export type WatermelonRPC = {
 
       // === Sub-Task Operations ===
       createSubTask: {
-        params: { taskId: string; data: CreateSubTaskInput }
+        params: { taskId: string; data: CreateSubTaskInput; parentId?: string }
         response: ApiResult<SubTask>
       }
       updateSubTask: {

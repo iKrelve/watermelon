@@ -7,8 +7,26 @@ import {
   useDeleteSubTask,
 } from '@/hooks/useDataQueries'
 import { Plus, CheckCircle2 } from 'lucide-react'
-import type { Task } from '@shared/types'
+import type { Task, SubTask } from '@shared/types'
 import { SubTaskItem } from './SubTaskItem'
+
+/**
+ * Recursively count all sub-tasks (including nested) and how many are completed.
+ */
+function countAllSubTasks(subTasks: SubTask[]): { total: number; completed: number } {
+  let total = 0
+  let completed = 0
+  for (const st of subTasks) {
+    total += 1
+    if (st.completed) completed += 1
+    if (st.children && st.children.length > 0) {
+      const nested = countAllSubTasks(st.children)
+      total += nested.total
+      completed += nested.completed
+    }
+  }
+  return { total, completed }
+}
 
 export function SubTaskList({ task }: { task: Task }): React.JSX.Element {
   const { t } = useTranslation()
@@ -19,7 +37,7 @@ export function SubTaskList({ task }: { task: Task }): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const subTasks = task.subTasks ?? []
-  const completedCount = subTasks.filter((s) => s.completed).length
+  const { total: totalCount, completed: completedCount } = countAllSubTasks(subTasks)
 
   const handleAddSubTask = async (): Promise<void> => {
     const trimmed = newSubTaskTitle.trim()
@@ -61,28 +79,43 @@ export function SubTaskList({ task }: { task: Task }): React.JSX.Element {
     }
   }
 
+  const handleCreateChild = async (parentId: string, title: string): Promise<void> => {
+    try {
+      await createSubTaskMut.mutateAsync({
+        taskId: task.id,
+        data: { title },
+        parentId,
+      })
+    } catch {
+      // Error handled by global handler
+    }
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
           {t('taskDetail.subtasksLabel')}
         </h4>
-        {subTasks.length > 0 && (
+        {totalCount > 0 && (
           <span className="text-xs text-muted-foreground">
-            {completedCount}/{subTasks.length}
+            {completedCount}/{totalCount}
           </span>
         )}
       </div>
 
-      {/* Sub-task items */}
+      {/* Sub-task items (top-level only; each item renders its own children recursively) */}
       <div className="space-y-0.5">
         {subTasks.map((subTask) => (
           <SubTaskItem
             key={subTask.id}
             subTask={subTask}
+            taskId={task.id}
+            depth={0}
             onToggle={handleToggleSubTask}
             onUpdate={handleUpdateSubTask}
             onDelete={handleDeleteSubTask}
+            onCreateChild={handleCreateChild}
           />
         ))}
       </div>
@@ -106,7 +139,7 @@ export function SubTaskList({ task }: { task: Task }): React.JSX.Element {
       </div>
 
       {/* All complete indicator */}
-      {subTasks.length > 0 && completedCount === subTasks.length && (
+      {totalCount > 0 && completedCount === totalCount && (
         <div className="flex items-center gap-1.5 text-xs text-emerald-600">
           <CheckCircle2 className="size-3.5" />
           {t('taskDetail.allSubtasksDone')}

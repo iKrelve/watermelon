@@ -30,6 +30,7 @@ export function rowToSubTask(row: typeof subTasks.$inferSelect): SubTask {
   return {
     id: row.id,
     taskId: row.taskId,
+    parentId: row.parentId ?? null,
     title: row.title,
     description: row.description ?? null,
     priority: (row.priority ?? 'none') as SubTask['priority'],
@@ -38,4 +39,27 @@ export function rowToSubTask(row: typeof subTasks.$inferSelect): SubTask {
     sortOrder: row.sortOrder,
     createdAt: row.createdAt,
   }
+}
+
+/**
+ * Build a tree of sub-tasks from a flat list.
+ * Sub-tasks with parentId === null are top-level children of the task.
+ * Each sub-task's `children` array contains its nested sub-tasks, sorted by sortOrder.
+ */
+export function buildSubTaskTree(flatSubTasks: SubTask[]): SubTask[] {
+  const byId = new Map<string, SubTask>()
+  for (const st of flatSubTasks) {
+    byId.set(st.id, { ...st, children: [] })
+  }
+
+  const roots: SubTask[] = []
+  for (const st of byId.values()) {
+    if (st.parentId && byId.has(st.parentId)) {
+      byId.get(st.parentId)!.children!.push(st)
+    } else {
+      roots.push(st)
+    }
+  }
+
+  return roots
 }

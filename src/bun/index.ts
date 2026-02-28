@@ -145,8 +145,10 @@ const watermelonRPC = BrowserView.defineRPC<WatermelonRPC>({
       },
 
       // === Sub-Task Operations ===
-      createSubTask: ({ taskId, data }) => {
-        return handleSync(() => taskService.createSubTask(taskId, data))
+      createSubTask: ({ taskId, data, parentId }) => {
+        return handleSync(() =>
+          taskService.createSubTask(taskId, { ...data, parentId: parentId ?? data.parentId })
+        )
       },
       updateSubTask: ({ id, data }) => {
         return handleSync(() => taskService.updateSubTask(id, data))

@@ -20,7 +20,30 @@ import {
   GripVertical,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useUIStore } from '@/stores/ui-store'
 import { SubTaskRow } from './SubTaskRow'
+
+/** Strip HTML tags and collapse whitespace for plain-text preview. */
+function stripHtml(html: string): string {
+  const text = html.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ')
+  return text.replace(/\s+/g, ' ').trim()
+}
+
+/** Recursively count all sub-tasks (including nested). */
+function countAllSubTasks(subTasks: SubTask[]): { total: number; completed: number } {
+  let total = 0
+  let completed = 0
+  for (const st of subTasks) {
+    total += 1
+    if (st.completed) completed += 1
+    if (st.children && st.children.length > 0) {
+      const nested = countAllSubTasks(st.children)
+      total += nested.total
+      completed += nested.completed
+    }
+  }
+  return { total, completed }
+}
 
 export function TaskItemContent({
   task,
@@ -48,10 +71,10 @@ export function TaskItemContent({
   dragHandleProps?: Record<string, unknown>
 }): React.JSX.Element {
   const { t } = useTranslation()
+  const compactMode = useUIStore((s) => s.compactMode)
   const overdue = isOverdue(task)
   const isCompleted = task.status === 'completed'
-  const subTaskCount = subTasks.length
-  const completedSubTasks = subTasks.filter((s) => s.completed).length
+  const { total: subTaskCount, completed: completedSubTasks } = countAllSubTasks(subTasks)
 
   const formattedDueDate = task.dueDate
     ? format(parseISO(task.dueDate), 'M月d日', { locale: zhCN })
@@ -129,6 +152,13 @@ export function TaskItemContent({
           >
             {task.title}
           </p>
+
+          {/* Description preview (compact mode only) */}
+          {compactMode && task.description && (
+            <p className="text-[11px] leading-snug text-muted-foreground truncate mt-0.5">
+              {stripHtml(task.description)}
+            </p>
+          )}
 
           {/* Meta row */}
           <div className="flex items-center gap-2 mt-1">
@@ -215,6 +245,7 @@ export function TaskItemContent({
               key={st.id}
               subTask={st}
               onToggle={handleToggleSubTask}
+              depth={0}
             />
           ))}
         </div>
