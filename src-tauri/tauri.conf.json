@@ -35,9 +35,5 @@
       "minimumSystemVersion": "10.15"
     }
   },
-  "plugins": {
-    "notification": {
-      "permission": true
-    }
-  }
+  "plugins": {}
 }
