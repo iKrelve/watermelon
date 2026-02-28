@@ -290,6 +290,6 @@ CI 自动完成：版本号升级 → 更新 package.json/Cargo.toml/tauri.conf.
 
 ### Git Identity (多仓库身份隔离)
 
-- 此仓库使用独立的 Git 身份配置（`git config` 不带 `--global`），避免美团内部邮箱暴露在 GitHub 公开仓库
+- 此仓库使用独立的 Git 身份配置（`git config` 不带 `--global`），与其他项目的全局 Git 配置隔离
 - 仓库级配置：`user.name = "iKrelve"`, `user.email = "iKrelve@users.noreply.github.com"`
 - 这不会影响其他项目的全局 Git 配置
