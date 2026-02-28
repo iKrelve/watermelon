@@ -301,6 +301,19 @@ const en = {
     horizontalRule: 'Horizontal rule',
     undo: 'Undo',
     redo: 'Redo',
+    textColor: 'Text color',
+    color: {
+      default: 'Default',
+      gray: 'Gray',
+      brown: 'Brown',
+      orange: 'Orange',
+      yellow: 'Yellow',
+      green: 'Green',
+      blue: 'Blue',
+      purple: 'Purple',
+      pink: 'Pink',
+      red: 'Red',
+    },
   },
 
   // Layout

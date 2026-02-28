@@ -7,6 +7,8 @@ import { Image } from '@tiptap/extension-image'
 import { Link } from '@tiptap/extension-link'
 import { Table, TableRow, TableHeader, TableCell } from '@tiptap/extension-table'
 import { Highlight } from '@tiptap/extension-highlight'
+import { Color } from '@tiptap/extension-color'
+import { TextStyle } from '@tiptap/extension-text-style'
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
@@ -41,6 +43,8 @@ import {
   Highlighter,
   Heading2,
   Heading3,
+  Palette,
+  RemoveFormatting,
 } from 'lucide-react'
 
 interface NoteEditorProps {
@@ -113,6 +117,8 @@ export function NoteEditor({
           class: 'bg-yellow-200 dark:bg-yellow-800/60 rounded px-0.5',
         },
       }),
+      TextStyle,
+      Color,
     ],
     content,
     editable,
@@ -383,6 +389,9 @@ function NoteToolbar({ editor }: { editor: Editor }): React.JSX.Element {
         {/* Link */}
         <LinkInsertButton editor={editor} />
 
+        {/* Text Color */}
+        <TextColorButton editor={editor} />
+
         {/* Undo/Redo */}
         <div className="ml-auto flex items-center gap-0.5">
           <ToolbarBtn
@@ -491,6 +500,108 @@ function ImageInsertButton({ editor }: { editor: Editor }): React.JSX.Element {
             className="hidden"
             onChange={handleFileSelect}
           />
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// ============================================================
+// Link Insert Button
+// ============================================================
+
+// ============================================================
+// Text Color Button (with color palette popover)
+// ============================================================
+
+const TEXT_COLORS = [
+  { name: 'default', value: '' },
+  { name: 'gray', value: '#6b7280' },
+  { name: 'brown', value: '#92400e' },
+  { name: 'orange', value: '#ea580c' },
+  { name: 'yellow', value: '#ca8a04' },
+  { name: 'green', value: '#16a34a' },
+  { name: 'blue', value: '#2563eb' },
+  { name: 'purple', value: '#7c3aed' },
+  { name: 'pink', value: '#db2777' },
+  { name: 'red', value: '#dc2626' },
+] as const
+
+function TextColorButton({ editor }: { editor: Editor }): React.JSX.Element {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+
+  const currentColor =
+    (editor.getAttributes('textStyle').color as string | undefined) ?? ''
+
+  const handleColorSelect = (color: string): void => {
+    if (color === '') {
+      editor.chain().focus().unsetColor().run()
+    } else {
+      editor.chain().focus().setColor(color).run()
+    }
+    setOpen(false)
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-7 rounded relative"
+              tabIndex={-1}
+            >
+              <Palette className="size-3.5" />
+              {/* Color indicator bar */}
+              <span
+                className="absolute bottom-0.5 left-1.5 right-1.5 h-0.5 rounded-full"
+                style={{
+                  backgroundColor: currentColor || 'currentColor',
+                }}
+              />
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="text-xs">
+          {t('editor.textColor')}
+        </TooltipContent>
+      </Tooltip>
+      <PopoverContent className="w-auto p-2" align="start">
+        <div className="space-y-1.5">
+          <div className="text-xs font-medium text-muted-foreground px-1">
+            {t('editor.textColor')}
+          </div>
+          <div className="grid grid-cols-5 gap-1">
+            {TEXT_COLORS.map((c) => (
+              <Tooltip key={c.name}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'size-6 rounded-md border border-border/40 flex items-center justify-center',
+                      'hover:scale-110 transition-transform',
+                      currentColor === c.value && 'ring-2 ring-primary ring-offset-1 ring-offset-background'
+                    )}
+                    style={{
+                      backgroundColor: c.value === '' ? 'transparent' : c.value,
+                    }}
+                    onClick={() => handleColorSelect(c.value)}
+                  >
+                    {c.value === '' && (
+                      <RemoveFormatting className="size-3 text-muted-foreground" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  {t(`editor.color.${c.name}`)}
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
         </div>
       </PopoverContent>
     </Popover>

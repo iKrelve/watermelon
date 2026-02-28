@@ -301,6 +301,19 @@ const zhCN = {
     horizontalRule: '分割线',
     undo: '撤销',
     redo: '重做',
+    textColor: '字体颜色',
+    color: {
+      default: '默认',
+      gray: '灰色',
+      brown: '棕色',
+      orange: '橙色',
+      yellow: '黄色',
+      green: '绿色',
+      blue: '蓝色',
+      purple: '紫色',
+      pink: '粉色',
+      red: '红色',
+    },
   },
 
   // Layout
