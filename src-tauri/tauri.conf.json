@@ -2,7 +2,7 @@
   "productName": "小西瓜",
   "version": "1.2.6",
   "identifier": "com.xiao-xigua.watermelon",
-  "mainBinaryName": "watermelon",
+  "mainBinaryName": "小西瓜",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:6689",
