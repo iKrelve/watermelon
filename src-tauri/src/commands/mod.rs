@@ -4,20 +4,8 @@ use crate::models::*;
 use crate::services::{task, category, tag, search, statistics, data, notification};
 use crate::services::notification::NotificationState;
 
-// ============================================================
-// Helper: wrap AppError as serializable Tauri error
-// ============================================================
-
-type CmdResult<T> = Result<T, AppError>;
-
-impl From<AppError> for tauri::ipc::InvokeError {
-    fn from(err: AppError) -> Self {
-        // Serialize AppError as a JSON value so the frontend receives
-        // { __error: { code, message, details } }
-        let wrapper = serde_json::json!({ "__error": err });
-        tauri::ipc::InvokeError::from(wrapper.to_string())
-    }
-}
+// Commands return Result<T, String> where the String is a JSON-serialized AppError.
+// This allows the frontend to parse error details from the rejected promise.
 
 // ============================================================
 // Task Commands

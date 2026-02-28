@@ -61,7 +61,7 @@ pub fn get_all_categories(conn: &Connection) -> Result<Vec<Category>, AppError> 
 }
 
 pub fn update_category(conn: &Connection, id: &str, input: UpdateCategoryInput) -> Result<Category, AppError> {
-    let existing = conn
+    let _existing = conn
         .query_row("SELECT * FROM categories WHERE id = ?1", params![id], row_to_category)
         .optional()
         .map_err(|e| AppError { code: "DB_ERROR".into(), message: e.to_string(), details: None })?

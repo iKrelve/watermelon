@@ -1,4 +1,4 @@
-use rusqlite::{Connection, params};
+use rusqlite::Connection;
 use crate::models::*;
 use crate::services::tag::find_task_ids_by_tags;
 
@@ -31,7 +31,8 @@ fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
 pub fn search_tasks(conn: &Connection, query: Option<String>, filters: Option<TaskFilter>) -> Result<Vec<Task>, AppError> {
     let mut conditions: Vec<String> = Vec::new();
     let mut values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    let mut param_idx = 1;
+    #[allow(unused_assignments)]
+    let mut param_idx: usize = 1;
 
     // Text search
     if let Some(ref q) = query {
