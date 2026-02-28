@@ -5,7 +5,10 @@ node_modules/
 out/
 dist/
 
-# Electrobun build output
+# Tauri build output
+src-tauri/target/
+
+# Legacy Electrobun build output (can be removed)
 build/dev-*/
 build/canary-*/
 build/stable-*/
