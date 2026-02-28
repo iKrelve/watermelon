@@ -1,4 +1,4 @@
-# 🍉 Watermelon (小西瓜)
+# 🍉 小西瓜
 
 macOS 极简 Todo 管理桌面应用，UI 风格参考 Things 3。
 
@@ -8,26 +8,26 @@ macOS 极简 Todo 管理桌面应用，UI 风格参考 Things 3。
 bun install
 ```
 
+首次开发前还需要安装 Rust universal target（构建 Universal Binary 用）：
+
+```bash
+rustup target add x86_64-apple-darwin aarch64-apple-darwin
+```
+
 ## 常用命令
 
 ```bash
-# 开发模式（Vite dev server + Electrobun watch，支持 HMR）
+# 开发模式（Vite dev server + Rust backend，支持 HMR）
 bun run dev
 
-# 无 HMR 开发模式（先构建前端再启动 Electrobun watch）
-bun run dev:no-hmr
-
-# 先构建前端再启动 Electrobun dev（无 watch）
-bun run start
-
-# 生产打包（双架构 arm64 + x64，产物在 artifacts/ 目录）
+# 生产打包（macOS Universal Binary，同时支持 Apple Silicon + Intel）
 bun run build
 
-# 仅构建 arm64 (Apple Silicon)
-bun run build:arm64
+# 仅启动前端 Vite dev server（端口 6689）
+bun run vite:dev
 
-# 仅构建 x64 (Intel，通过 Rosetta 2)
-bun run build:x64
+# 仅构建前端（输出到 dist/）
+bun run vite:build
 
 # 测试
 bun run test
@@ -39,4 +39,14 @@ bun run format
 
 # 添加 shadcn/ui 组件
 bunx --bun shadcn@latest add <component-name>
+```
+
+## 构建产物
+
+运行 `bun run build` 后，构建产物位于：
+
+```
+src-tauri/target/universal-apple-darwin/release/bundle/
+├── dmg/          # .dmg 安装镜像
+└── macos/        # .app 应用包
 ```

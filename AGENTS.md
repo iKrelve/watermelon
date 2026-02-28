@@ -2,74 +2,76 @@
 
 ## Project Overview
 
-Watermelon (小西瓜) 是一款面向 macOS 的极简 Todo 管理桌面应用，UI 风格参考 Things 3。
+小西瓜是一款面向 macOS 的极简 Todo 管理桌面应用，UI 风格参考 Things 3。
 支持任务分类、标签、子任务、重复任务、提醒通知、统计视图、简洁模式等功能。
 
 ## Tech Stack
 
-- **Runtime / Package Manager**: Bun
-- **Desktop Framework**: Electrobun (Bun runtime + Zig native bindings + system WebView)
+- **Package Manager**: Bun (前端依赖管理)
+- **Desktop Framework**: Tauri v2 (Rust backend + system WebView)
+- **Backend Language**: Rust (via Tauri, handles DB/notifications/window management)
 - **UI Framework**: React 19 + TypeScript 5.9
-- **Build Tool**: Vite 7 (standalone config, non-electron-vite)
+- **Build Tool**: Vite 7 (standalone config)
 - **CSS**: Tailwind CSS v4 (`@tailwindcss/vite` plugin, CSS-first config)
 - **Component Library**: shadcn/ui (new-york style, Radix UI primitives)
 - **Icons**: lucide-react
 - **State Management**: Zustand 5 (UI state) + @tanstack/react-query 5 (server/async state)
-- **Database**: bun:sqlite + Drizzle ORM (SQLite, WAL mode)
+- **Database**: rusqlite (bundled SQLite, WAL mode) — Rust 原生
 - **Resizable Panels**: react-resizable-panels v4 (⚠️ breaking API changes from v3, see below)
 - **Drag & Drop**: @dnd-kit/core + @dnd-kit/sortable (task reordering)
-- **Date Utilities**: date-fns
+- **Date Utilities**: date-fns (frontend), chrono (Rust backend)
 - **Charts**: recharts (Statistics view)
-- **Testing**: Vitest + fast-check (property-based testing)
-- **Linting**: ESLint 9 (flat config) + Prettier
-- **Other**: uuid, sonner (toast), cmdk (command palette), react-day-picker, next-themes
+- **Testing**: Vitest + fast-check (前端 property-based testing), cargo test (Rust 后端)
+- **Linting**: ESLint 9 (flat config) + Prettier (前端), Rust 编译器 warnings (后端)
+- **Other**: uuid, sonner (toast), cmdk (command palette), react-day-picker, next-themes, i18next
 
 ## Project Structure
 
 ```
 watermelon/
-├── electrobun.config.ts          # Electrobun build config (app metadata, bun entrypoint, copy rules, scripts hooks)
 ├── vite.config.ts                # Vite config for mainview (React + Tailwind, output to dist/)
 ├── vitest.config.ts              # Vitest test configuration
-├── drizzle.config.ts             # Drizzle Kit config (schema inspection)
-├── package.json                  # Dependencies & scripts (managed by Bun)
+├── package.json                  # Frontend dependencies & scripts (managed by Bun)
 ├── components.json               # shadcn/ui CLI configuration
-├── tsconfig.json                 # Single unified TS config with path aliases
+├── tsconfig.json                 # TypeScript config with path aliases
 ├── eslint.config.mjs             # ESLint v9 flat config
 ├── .prettierrc                   # Prettier rules
-├── scripts/
-│   ├── post-build.ts            # postBuild hook: injects CFBundleDisplayName (小西瓜) into Info.plist
-│   ├── build-all.sh             # Dual-arch build script (arm64 + x64), used by `bun run build`
-│   └── build-x64.sh             # x64-only build via Rosetta 2, used by `bun run build:x64`
-├── build/                        # App icons (icon.icns, icon.svg, icon_1024.png)
-├── dist/                         # Vite build output (copied to Electrobun bundle by config)
+├── build/                        # App icons (icon.icns, icon.svg, icon_1024.png, icon.iconset/)
+├── dist/                         # Vite build output (referenced by Tauri as frontendDist)
+├── src-tauri/                    # Tauri v2 Rust backend
+│   ├── Cargo.toml                # Rust dependencies (tauri, rusqlite, serde, uuid, chrono, etc.)
+│   ├── tauri.conf.json           # Tauri app config (productName, window, bundle, plugins)
+│   ├── capabilities/default.json # Tauri v2 capability permissions
+│   ├── build.rs                  # Tauri build script
+│   ├── icons/                    # App icons for Tauri bundling
+│   └── src/
+│       ├── main.rs               # Rust entry point
+│       ├── lib.rs                # Tauri Builder setup, plugin/state registration, command handler
+│       ├── db/
+│       │   └── mod.rs            # SQLite init (rusqlite), WAL mode, table creation, migrations
+│       ├── models/
+│       │   └── mod.rs            # All domain structs (Task, SubTask, Category, Tag, inputs, filters, etc.)
+│       ├── services/
+│       │   ├── mod.rs
+│       │   ├── task.rs           # Task & sub-task CRUD, completion/uncompletion, recurrence, reorder
+│       │   ├── category.rs       # Category CRUD
+│       │   ├── tag.rs            # Tag CRUD, task-tag associations
+│       │   ├── search.rs         # Text search + filter (LIKE + AND conditions)
+│       │   ├── data.rs           # Data import/export (JSON)
+│       │   ├── notification.rs   # macOS native notifications via tauri-plugin-notification
+│       │   └── statistics.rs     # Stats summary & daily trend queries
+│       ├── commands/
+│       │   └── mod.rs            # All #[tauri::command] handlers (~30 commands)
+│       └── utils/
+│           ├── mod.rs
+│           └── recurrence.rs     # Recurrence rule calculation (daily/weekly/monthly/custom)
 ├── src/
-│   ├── shared/                   # Shared code between bun process & webview
-│   │   ├── types.ts              # All domain types, input types, filter/stats types
-│   │   └── rpc-schema.ts         # Typed RPC schema (WatermelonRPC) — single source of truth for IPC
-│   ├── bun/                      # Bun main process (Electrobun backend)
-│   │   ├── index.ts              # App entry: DB init, service wiring, RPC handlers, BrowserWindow
-│   │   ├── db/
-│   │   │   ├── index.ts          # Database init (bun:sqlite), migrations, WAL mode, table creation
-│   │   │   ├── schema.ts         # Drizzle ORM schema (tasks, subTasks, categories, tags, taskTags)
-│   │   │   └── __tests__/        # DB roundtrip & transaction tests
-│   │   ├── services/
-│   │   │   ├── task.service.ts       # Task & sub-task CRUD, completion/uncompletion, recurrence
-│   │   │   ├── category.service.ts   # Category CRUD
-│   │   │   ├── tag.service.ts        # Tag CRUD, task-tag associations
-│   │   │   ├── search.service.ts     # Text search + filter (LIKE + AND conditions)
-│   │   │   ├── data.service.ts       # Data import/export service
-│   │   │   ├── notification.service.ts # macOS native notifications, scheduling
-│   │   │   ├── statistics.service.ts # Stats summary & daily trend queries
-│   │   │   └── __tests__/            # Service unit tests
-│   │   └── utils/
-│   │       ├── recurrence.ts     # Recurrence rule calculation (daily/weekly/monthly/custom)
-│   │       ├── mappers.ts        # Data mapping/transformation utilities
-│   │       └── __tests__/        # Recurrence tests
+│   ├── shared/                   # Shared TypeScript types (frontend reference)
+│   │   └── types.ts              # All domain types, input types, filter/stats types
 │   └── mainview/                 # React app (WebView, built by Vite)
 │       ├── index.html            # HTML entry
 │       ├── main.tsx              # React entry point (imports rpc.ts, StrictMode, ErrorBoundary)
-│       ├── rpc.ts                # WebView RPC client: maps electrobun.rpc to window.api interface
+│       ├── rpc.ts                # Tauri invoke wrapper: maps invoke('cmd') to window.api interface
 │       ├── App.tsx               # Root component (renders Layout)
 │       ├── index.css             # Tailwind CSS entry + shadcn theme variables (oklch)
 │       ├── env.d.ts              # Vite client + window.api type declarations
@@ -85,7 +87,6 @@ watermelon/
 │       ├── components/
 │       │   ├── Layout.tsx        # Three-panel layout (Sidebar | TaskList | Detail)
 │       │   ├── AppSidebar.tsx    # Sidebar navigation (views, categories, tags)
-│       │   ├── TaskList.tsx      # Task list with search, sort, add, filter, drag-and-drop
 │       │   ├── TaskDetail.tsx    # Task detail panel (edit title/desc, sub-tasks, tags, etc.)
 │       │   ├── Statistics.tsx    # Stats dashboard (area chart, summary cards)
 │       │   ├── CalendarView.tsx  # Calendar view for tasks
@@ -93,6 +94,8 @@ watermelon/
 │       │   ├── CommandPalette.tsx # Cmd+K command palette (cmdk)
 │       │   ├── ThemeProvider.tsx # Theme provider (next-themes, light/dark mode)
 │       │   ├── ErrorBoundary.tsx # React error boundary with retry UI
+│       │   ├── RichTextEditor.tsx # TipTap rich text editor
+│       │   ├── task-detail/      # Task detail sub-components
 │       │   ├── task-list/        # Task list sub-components (SortableTaskItem, SubTaskRow, etc.)
 │       │   └── ui/              # shadcn/ui generated components
 │       ├── hooks/
@@ -103,8 +106,7 @@ watermelon/
 │           ├── date-filters.ts  # Task date filtering (isOverdue, isUpcoming, filterToday)
 │           ├── priority.ts      # Priority helpers (rank, color, label, badge classes)
 │           └── __tests__/       # Utils tests
-├── build/                        # Electrobun build output (gitignored), e.g. stable-macos-arm64/, stable-macos-x64/
-└── artifacts/                    # Final distributable artifacts (DMG, tar.zst, update.json) for all archs
+└── artifacts/                    # Final distributable artifacts (DMG, etc.)
 ```
 
 ## Path Aliases
@@ -123,42 +125,29 @@ Maps to `src/shared/` and is configured in:
 1. `tsconfig.json` → `compilerOptions.paths` (TypeScript resolution)
 2. `vite.config.ts` → `resolve.alias` (Vite bundler resolution)
 
-### `@bun/` — Bun process code (test only)
-
-Maps to `src/bun/` and is configured in:
-
-1. `vitest.config.ts` → `resolve.alias` (test runner resolution)
-
 ## Key Commands
 
 ```bash
-bun run dev          # Start dev mode (Electrobun dev with --watch, auto-rebuild on file changes)
-bun run start        # Build Vite first, then launch Electrobun dev (no watch)
-bun run dev:hmr      # HMR mode: runs Vite dev server + Electrobun concurrently (hot reload)
-bun run build        # Production build: dual-arch (arm64 + x64), --env=stable
-bun run build:arm64  # Production build: arm64 only
-bun run build:x64    # Production build: x64 only (via Rosetta 2)
+bun run dev          # Start Tauri dev mode (Vite dev server + Rust backend, HMR enabled)
+bun run build        # Production build: Tauri build (compiles Rust + bundles frontend)
+bun run vite:dev     # Start Vite dev server only (port 6689)
+bun run vite:build   # Build frontend only (output to dist/)
 bun run lint         # ESLint check
 bun run format       # Prettier format
-bun run test         # Run tests (vitest run)
+bun run test         # Run frontend tests (vitest run)
 bun run test:watch   # Run tests in watch mode (vitest)
 ```
 
 ### Build & Distribution
 
-- **`bun run build`** — 默认构建命令，同时产出 arm64 (Apple Silicon) 和 x64 (Intel) 两个架构的生产包（`--env=stable`）。
-- **`bun run build:arm64`** — 仅构建 arm64 版本。
-- **`bun run build:x64`** — 仅构建 x64 版本。通过下载 x64 版本的 Electrobun CLI 并在 Rosetta 2 下运行实现交叉构建。x64 CLI 会缓存在 `node_modules/electrobun/.cache-x64/`。
-- **构建产物**:
-  - `build/stable-macos-arm64/` / `build/stable-macos-x64/` — 完整的 `.app` bundle
-  - `artifacts/` — 可分发文件（`.dmg` 安装镜像、`.tar.zst` 压缩包、`update.json`），两个架构的文件通过文件名前缀区分（`stable-macos-arm64-*` / `stable-macos-x64-*`）
-- **前置条件**: x64 构建需要 macOS 上安装了 Rosetta 2（`softwareupdate --install-rosetta`）
+- **`bun run build`** — 执行 `tauri build`，先构建 Vite 前端到 `dist/`，然后编译 Rust 后端并打包为 `.app` bundle。
+- **构建产物**: `src-tauri/target/release/bundle/` 目录下包含 `.app`、`.dmg` 等可分发文件。
+- **Rust 后端编译**: 首次构建需要下载并编译所有 Rust crate 依赖（约 500+ packages），后续增量编译很快。
 
 ### Dev Workflow
 
-- **`bun run dev`** — 最常用的开发命令。Electrobun 的 `--watch` 模式会监听文件变化并自动重建 Bun 进程端代码。WebView 侧使用预构建的静态文件。
-- **`bun run dev:hmr`** — 如果需要前端热更新 (HMR)，使用此命令。它会同时启动 Vite dev server (端口 6689) 和 Electrobun，WebView 会自动连接到 Vite dev server。
-- **`bun run start`** — 先执行 `vite build` 构建前端静态文件到 `dist/`，然后启动 Electrobun dev。适合需要测试完整构建流程时使用。
+- **`bun run dev`** — 最常用的开发命令。Tauri 会同时启动 Vite dev server (端口 6689, HMR) 和 Rust 后端。前端修改即时热更新，Rust 修改会自动重新编译并重启。
+- **`bun run vite:dev`** — 仅启动前端 dev server，适合只调试前端样式/组件时使用。
 
 ## Adding shadcn/ui Components
 
@@ -172,39 +161,44 @@ Components are generated into `src/mainview/components/ui/` with `@/` import ali
 
 ### App Naming
 
-- `electrobun.config.ts` 中 `app.name` **必须使用 ASCII 字符**（当前为 `'watermelon'`），因为 Bun.Archive 的 tar header 不支持非 ASCII 路径，中文名会导致 `ArchiveHeaderError`。
-- macOS 用户可见的显示名"小西瓜"通过 `scripts/post-build.ts` 注入 `CFBundleDisplayName` 到 `Info.plist` 实现。
-- 窗口标题在 `src/bun/index.ts` 的 `BrowserWindow({ title: '小西瓜' })` 中设置。
+- 应用名为"小西瓜"，在 `src-tauri/tauri.conf.json` 中通过 `productName` 和窗口 `title` 配置。
+- Tauri 原生支持中文应用名，无需额外脚本处理。
+- Bundle identifier: `com.xiao-xigua.watermelon`
 
-### Electrobun Process Model
+### Tauri v2 Process Model
 
-- **Bun process** (`src/bun/`): Bun runtime environment. Handles native OS features, database operations (via `bun:sqlite`), system notifications, file system access. Entry point: `src/bun/index.ts`.
-- **WebView** (`src/mainview/`): System WebView (not bundled Chromium). Pure React app built by Vite. Communicates with Bun process via Electrobun's typed RPC.
-- **No preload scripts**: Electrobun automatically injects RPC capabilities into the WebView. The `src/mainview/rpc.ts` file creates a `window.api` compatibility layer on top of `electrobun.rpc`.
+- **Rust backend** (`src-tauri/src/`): Rust 进程，处理数据库操作 (rusqlite)、系统通知 (tauri-plugin-notification)、窗口管理、文件系统访问。Entry point: `src-tauri/src/main.rs` → `lib.rs`。
+- **WebView** (`src/mainview/`): System WebView (not bundled Chromium). Pure React app built by Vite. Communicates with Rust backend via Tauri `invoke()` commands.
+- **State management**: Database (`db::Database`) 和 NotificationState 通过 Tauri 的 `app.manage()` 注册为全局状态，commands 通过 `State<T>` 访问。
 
-### RPC Communication
+### IPC Communication (Tauri invoke)
 
-- RPC schema defined in `src/shared/rpc-schema.ts` as `WatermelonRPC` type (fully typed request/response)
-- **Bun side**: `src/bun/index.ts` uses `BrowserView.defineRPC<WatermelonRPC>()` to register all handlers
-- **WebView side**: `src/mainview/rpc.ts` wraps `electrobun.rpc.request.xxx()` calls as `window.api.xxx()` for compatibility with existing React code
-- **Error pattern**: Handlers wrap errors as `{ __error: AppError }`; renderer uses `unwrap()` to extract results or show toast
-- **Type safety**: All RPC calls are fully typed end-to-end via the shared `WatermelonRPC` schema
+- **Rust side**: `src-tauri/src/commands/mod.rs` 定义所有 `#[tauri::command]` 函数，在 `lib.rs` 中通过 `generate_handler![]` 注册
+- **WebView side**: `src/mainview/rpc.ts` 使用 `@tauri-apps/api/core` 的 `invoke()` 封装为 `window.api.xxx()` 接口
+- **Error pattern**: Commands 返回 `Result<T, String>`，错误时 String 是 JSON 序列化的 AppError，前端通过 rejected promise 接收
+- **Command naming**: Rust 使用 snake_case (`create_task`)，前端调用时也使用 snake_case (`invoke('create_task', { data })`)
 
 ### Database
 
-- **Engine**: bun:sqlite (Bun 内置 SQLite 驱动) with WAL journal mode and foreign keys enabled
-- **ORM**: Drizzle ORM (`drizzle-orm/bun-sqlite` adapter) for type-safe queries; raw SQL for table creation and migrations
-- **Schema**: Defined in `src/bun/db/schema.ts` — 5 tables: `tasks`, `sub_tasks`, `categories`, `tags`, `task_tags`
-- **Migrations**: Incremental via `ALTER TABLE` in `src/bun/db/index.ts` `runMigrations()`; no migration files
-- **Location**: `Utils.paths.userData/watermelon.db` in production; `:memory:` for tests via `initTestDatabase()`
-- **Indexes**: On `tasks(status)`, `tasks(category_id)`, `tasks(due_date)`, `tasks(priority)`, `sub_tasks(task_id)`, `task_tags(task_id)`, `task_tags(tag_id)`
+- **Engine**: rusqlite (bundled SQLite) with WAL journal mode and foreign keys enabled
+- **Schema**: 5 tables: `tasks`, `sub_tasks`, `categories`, `tags`, `task_tags`；定义在 `src-tauri/src/db/mod.rs`
+- **Migrations**: 4 个增量迁移，通过 `schema_version` 表跟踪版本，在 `db/mod.rs` 的 `run_migrations()` 中执行
+- **Location**: `app.path().app_data_dir()` / `watermelon.db` in production
+- **Indexes**: On `tasks(status)`, `tasks(category_id)`, `tasks(due_date)`, `tasks(priority)`, `tasks(completed_at)`, `tasks(sort_order)`, `sub_tasks(task_id)`, `sub_tasks(parent_id)`, `task_tags(task_id)`, `task_tags(tag_id)`
+- **Data compatibility**: SQLite 文件格式通用，从旧版 Electrobun 迁移的数据库文件可直接读取
 
-### State Management
+### State Management (Frontend)
 
 - **UI state**: Zustand store in `src/mainview/stores/ui-store.ts` — manages filterView, selectedTask, compactMode, searchQuery, theme, etc.
 - **Server/async state**: @tanstack/react-query hooks in `src/mainview/hooks/useDataQueries.ts` — all CRUD operations (tasks, categories, tags, sub-tasks) with automatic cache invalidation
 - **Legacy context**: `src/mainview/context/AppContext.tsx` (useReducer) — being migrated to the above stores
 - Access UI state via `useUIStore()` selector hooks; access data via `useTasksQuery()`, `useCreateTask()`, etc.
+
+### Window Drag Region
+
+- macOS `titleBarStyle: Overlay` 模式下，窗口拖拽通过 `data-tauri-drag-region` HTML 属性实现
+- CSS class `.drag-region` 提供 `app-region: drag` 样式作为补充
+- 交互元素需要 `.no-drag` class 或 `app-region: no-drag` 以避免被拖拽区域拦截
 
 ### react-resizable-panels v4
 
@@ -223,6 +217,7 @@ Components are generated into `src/mainview/components/ui/` with `@/` import ali
 - Use `cn()` from `@/lib/utils` for conditional class merging
 - Prettier: no semicolons, single quotes, 2-space indent, trailing commas: none, 100 char width
 - React components: function declarations (not arrow functions for top-level components)
+- Rust: standard formatting (`cargo fmt`), derive macros for serde serialization
 
 ### CSS / Theming
 
@@ -233,9 +228,9 @@ Components are generated into `src/mainview/components/ui/` with `@/` import ali
 
 ### Testing
 
-- **Framework**: Vitest (configured in `vitest.config.ts`)
-- **Test location**: Co-located `__tests__/` directories next to source files
-- **Pattern**: `src/**/__tests__/**/*.test.ts`
-- **Environment**: Node (for bun-process service tests)
-- **Database**: Uses in-memory SQLite (`initTestDatabase()`) for isolated tests
-- **Property testing**: fast-check for recurrence rule edge cases
+- **Frontend**: Vitest (configured in `vitest.config.ts`)
+  - Test location: Co-located `__tests__/` directories next to source files
+  - Pattern: `src/**/__tests__/**/*.test.ts`
+  - Property testing: fast-check for edge cases
+- **Backend (Rust)**: `cargo test` in `src-tauri/`
+  - Rust 服务层可独立单元测试
