@@ -1,6 +1,6 @@
 {
   "productName": "小西瓜",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "identifier": "com.xiao-xigua.watermelon",
   "mainBinaryName": "watermelon",
   "build": {
