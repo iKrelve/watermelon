@@ -252,8 +252,8 @@ Components are generated into `src/mainview/components/ui/` with `@/` import ali
 
 ### CI/CD & Release
 
-- **Repository**: GitHub public repo `iKrelve/watermelon` (code also mirrored to internal `git.sankuai.com`)
-- **Git remotes**: `origin` = internal Git, `github` = GitHub public repo
+- **Repository**: GitHub public repo `iKrelve/watermelon`
+- **Git remote**: `origin` = `https://github.com/iKrelve/watermelon.git`
 - **Trigger**: Push to `master` branch automatically triggers the release pipeline
 - **Pipeline** (`.github/workflows/release.yml`):
   1. **Version bump**: Analyzes commit messages (conventional commits) to determine semver bump
@@ -277,8 +277,7 @@ Components are generated into `src/mainview/components/ui/` with `@/` import ali
 git add -A
 git commit -m "feat: 新增XX功能"     # feat → minor (+0.1.0)
 git commit -m "fix: 修复XX问题"      # fix → patch (+0.0.1)
-git push github master               # 推到 GitHub → 自动触发 CI
-git push origin master                # 同步到内部仓库（可选）
+git push                              # 推到 GitHub → 自动触发 CI
 ```
 
 CI 自动完成：版本号升级 → 更新 package.json/Cargo.toml/tauri.conf.json → 打 tag → 构建 macOS universal binary → 发布 GitHub Release（含 .dmg + 更新包 + latest.json）

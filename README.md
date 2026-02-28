@@ -65,10 +65,7 @@ git commit -m "feat: 新增XX功能"     # feat → minor 版本升级 (+0.1.0)
 git commit -m "fix: 修复XX问题"      # fix → patch 版本升级 (+0.0.1)
 
 # 推送到 GitHub（自动触发构建发布）
-git push github master
-
-# 同步到内部仓库（可选）
-git push origin master
+git push
 ```
 
 ### 自动化流程
