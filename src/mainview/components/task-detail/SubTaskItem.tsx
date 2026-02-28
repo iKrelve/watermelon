@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -17,6 +18,8 @@ import {
   ClipboardList,
   ChevronRight,
   ChevronDown,
+  Plus,
+  ListChecks,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -32,14 +35,20 @@ import { useDebouncedCallback } from './useDebouncedCallback'
 
 export function SubTaskItem({
   subTask,
+  taskId,
+  depth = 0,
   onToggle,
   onUpdate,
   onDelete,
+  onCreateChild,
 }: {
   subTask: SubTaskType
+  taskId: string
+  depth?: number
   onToggle: (id: string, completed: boolean) => void
   onUpdate: (id: string, data: Record<string, unknown>) => void
   onDelete: (id: string) => void
+  onCreateChild: (parentId: string, title: string) => Promise<void>
 }): React.JSX.Element {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(false)
@@ -47,7 +56,13 @@ export function SubTaskItem({
   const [dueDateOpen, setDueDateOpen] = useState(false)
   const [editingTitle, setEditingTitle] = useState(false)
   const [titleValue, setTitleValue] = useState(subTask.title)
+  const [newChildTitle, setNewChildTitle] = useState('')
   const titleInputRef = useRef<HTMLInputElement>(null)
+  const childInputRef = useRef<HTMLInputElement>(null)
+
+  const children = subTask.children ?? []
+  const childCount = children.length
+  const completedChildCount = children.filter((c) => c.completed).length
 
   // Sync local title when subTask changes externally
   useEffect(() => {
@@ -79,6 +94,14 @@ export function SubTaskItem({
   const handleDueDateChange = (date: Date | undefined): void => {
     onUpdate(subTask.id, { dueDate: date ? format(date, 'yyyy-MM-dd') : null })
     setDueDateOpen(false)
+  }
+
+  const handleAddChild = async (): Promise<void> => {
+    const trimmed = newChildTitle.trim()
+    if (!trimmed) return
+    await onCreateChild(subTask.id, trimmed)
+    setNewChildTitle('')
+    childInputRef.current?.focus()
   }
 
   const formattedDueDate = subTask.dueDate
@@ -198,6 +221,12 @@ export function SubTaskItem({
                 )}
                 {subTask.description && (
                   <ClipboardList className="size-3 text-muted-foreground/50 shrink-0" />
+                )}
+                {childCount > 0 && (
+                  <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground shrink-0">
+                    <ListChecks className="size-3" />
+                    {completedChildCount}/{childCount}
+                  </span>
                 )}
               </>
             )}
@@ -335,6 +364,42 @@ export function SubTaskItem({
             placeholder={t('taskDetail.descriptionPlaceholder')}
             className="min-h-[60px] text-xs resize-none border-dashed"
           />
+
+          {/* Nested children */}
+          {childCount > 0 && (
+            <div className="space-y-0.5 border-l-2 border-border/40 pl-2 ml-0.5">
+              {children.map((child) => (
+                <SubTaskItem
+                  key={child.id}
+                  subTask={child}
+                  taskId={taskId}
+                  depth={depth + 1}
+                  onToggle={onToggle}
+                  onUpdate={onUpdate}
+                  onDelete={onDelete}
+                  onCreateChild={onCreateChild}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Add child sub-task */}
+          <div className="flex items-center gap-1.5 pl-0.5">
+            <Plus className="size-3 text-muted-foreground shrink-0" />
+            <Input
+              ref={childInputRef}
+              value={newChildTitle}
+              onChange={(e) => setNewChildTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  handleAddChild()
+                }
+              }}
+              placeholder={t('taskDetail.addSubtaskPlaceholder')}
+              className="h-6 border-none shadow-none focus-visible:ring-0 px-0 text-xs"
+            />
+          </div>
         </div>
       )}
     </div>

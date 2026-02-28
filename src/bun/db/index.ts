@@ -109,6 +109,7 @@ function createTables(sqliteDb: Database): void {
     CREATE TABLE IF NOT EXISTS sub_tasks (
       id TEXT PRIMARY KEY,
       task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+      parent_id TEXT,
       title TEXT NOT NULL,
       description TEXT,
       priority TEXT NOT NULL DEFAULT 'none',
@@ -205,6 +206,20 @@ const MIGRATIONS: Migration[] = [
         `)
       }
       db.exec('CREATE INDEX IF NOT EXISTS idx_tasks_sort_order ON tasks(sort_order)')
+    },
+  },
+  {
+    version: 4,
+    description: 'Add parent_id column to sub_tasks for recursive nesting',
+    up: (db) => {
+      const columns = db
+        .query('PRAGMA table_info(sub_tasks)')
+        .all() as { name: string }[]
+      const colNames = columns.map((col) => col.name)
+      if (!colNames.includes('parent_id')) {
+        db.exec('ALTER TABLE sub_tasks ADD COLUMN parent_id TEXT')
+      }
+      db.exec('CREATE INDEX IF NOT EXISTS idx_sub_tasks_parent_id ON sub_tasks(parent_id)')
     },
   },
 ]

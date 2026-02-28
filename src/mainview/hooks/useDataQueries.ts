@@ -241,12 +241,20 @@ export function useReorderTasks(): UseMutationResult<void, Error, ReorderTaskIte
 export function useCreateSubTask(): UseMutationResult<
   SubTask,
   Error,
-  { taskId: string; data: CreateSubTaskInput }
+  { taskId: string; data: CreateSubTaskInput; parentId?: string }
 > {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ taskId, data }: { taskId: string; data: CreateSubTaskInput }) => {
-      const result = await window.api.createSubTask(taskId, data)
+    mutationFn: async ({
+      taskId,
+      data,
+      parentId,
+    }: {
+      taskId: string
+      data: CreateSubTaskInput
+      parentId?: string
+    }) => {
+      const result = await window.api.createSubTask(taskId, data, parentId)
       return unwrap(result)
     },
     onSuccess: () => {

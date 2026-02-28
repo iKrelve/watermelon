@@ -10,6 +10,8 @@
     "dev": "concurrently \"vite --port 6689\" \"vite build && electrobun dev --watch\"",
     "dev:no-hmr": "vite build && electrobun dev --watch",
     "build": "vite build && electrobun build --env=canary",
+    "build:x64": "bash scripts/build-x64.sh",
+    "build:all": "bash scripts/build-all.sh",
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "bun --bun vitest run",

@@ -49,6 +49,7 @@ export interface ReorderTaskItem {
 export interface SubTask {
   id: string
   taskId: string
+  parentId: string | null // null = direct child of task; otherwise points to parent sub-task
   title: string
   description: string | null
   priority: Priority
@@ -56,6 +57,8 @@ export interface SubTask {
   completed: boolean
   sortOrder: number
   createdAt: string
+  // Populated by tree-building logic
+  children?: SubTask[]
 }
 
 export interface Category {
@@ -101,6 +104,7 @@ export interface CreateSubTaskInput {
   priority?: Priority
   dueDate?: string
   sortOrder?: number
+  parentId?: string // ID of parent sub-task for nesting
 }
 
 export interface UpdateSubTaskInput {

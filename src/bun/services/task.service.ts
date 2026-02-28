@@ -17,7 +17,7 @@ import type {
 } from '../../shared/types'
 import { AppException } from '../../shared/types'
 import { getNextOccurrence } from '../utils/recurrence'
-import { rowToTask, rowToSubTask } from '../utils/mappers'
+import { rowToTask, rowToSubTask, buildSubTaskTree } from '../utils/mappers'
 
 export class TaskService {
   constructor(
@@ -75,14 +75,14 @@ export class TaskService {
 
     const task = rowToTask(row)
 
-    // Load sub-tasks
+    // Load sub-tasks and build tree
     const subTaskRows = this.db
       .select()
       .from(subTasks)
       .where(eq(subTasks.taskId, id))
       .orderBy(subTasks.sortOrder)
       .all()
-    task.subTasks = subTaskRows.map((r) => rowToSubTask(r))
+    task.subTasks = buildSubTaskTree(subTaskRows.map((r) => rowToSubTask(r)))
 
     // Load tags
     const tagRows = this.db
@@ -151,7 +151,7 @@ export class TaskService {
     // Attach relations to each task
     for (const task of taskList) {
       const stRows = subTasksByTaskId.get(task.id)
-      task.subTasks = stRows ? stRows.map((r) => rowToSubTask(r)) : []
+      task.subTasks = stRows ? buildSubTaskTree(stRows.map((r) => rowToSubTask(r))) : []
       task.tags = tagsByTaskId.get(task.id) ?? []
     }
 
@@ -274,24 +274,42 @@ export class TaskService {
     this.validateTitle(input.title)
 
     // Verify parent task exists
-    const parent = this.db.select().from(tasks).where(eq(tasks.id, taskId)).get()
-    if (!parent) {
+    const parentTask = this.db.select().from(tasks).where(eq(tasks.id, taskId)).get()
+    if (!parentTask) {
       throw new AppException('NOT_FOUND', 'Parent task not found')
+    }
+
+    const parentId = input.parentId ?? null
+
+    // If nesting under a sub-task, verify it exists and belongs to the same task
+    if (parentId) {
+      const parentSubTask = this.db.select().from(subTasks).where(eq(subTasks.id, parentId)).get()
+      if (!parentSubTask) {
+        throw new AppException('NOT_FOUND', 'Parent sub-task not found')
+      }
+      if (parentSubTask.taskId !== taskId) {
+        throw new AppException('VALIDATION_ERROR', 'Parent sub-task does not belong to this task')
+      }
     }
 
     const id = uuidv4()
     const now = new Date().toISOString()
 
-    // Get max sort order
+    // Get max sort order among siblings (same parentId)
+    const siblingConditions = parentId
+      ? and(eq(subTasks.taskId, taskId), eq(subTasks.parentId, parentId))
+      : and(eq(subTasks.taskId, taskId), sql`${subTasks.parentId} IS NULL`)
+
     const maxOrder = this.db
       .select({ max: sql<number>`MAX(${subTasks.sortOrder})` })
       .from(subTasks)
-      .where(eq(subTasks.taskId, taskId))
+      .where(siblingConditions)
       .get()
 
     const row = {
       id,
       taskId,
+      parentId,
       title: input.title.trim(),
       description: input.description ?? null,
       priority: input.priority ?? ('none' as const),
@@ -332,7 +350,24 @@ export class TaskService {
   }
 
   deleteSubTask(id: string): void {
+    // Recursively delete all descendant sub-tasks first
+    this.deleteSubTaskDescendants(id)
     this.db.delete(subTasks).where(eq(subTasks.id, id)).run()
+  }
+
+  /**
+   * Recursively delete all descendants of a sub-task.
+   */
+  private deleteSubTaskDescendants(parentId: string): void {
+    const children = this.db
+      .select({ id: subTasks.id })
+      .from(subTasks)
+      .where(eq(subTasks.parentId, parentId))
+      .all()
+    for (const child of children) {
+      this.deleteSubTaskDescendants(child.id)
+      this.db.delete(subTasks).where(eq(subTasks.id, child.id)).run()
+    }
   }
 
   getSubTasks(taskId: string): SubTask[] {

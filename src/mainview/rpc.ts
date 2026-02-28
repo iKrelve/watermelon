@@ -42,8 +42,8 @@ export const api = {
   reorderTasks: (items: ReorderTaskItem[]) => electrobun.rpc!.request.reorderTasks({ items }),
 
   // Sub-task operations
-  createSubTask: (taskId: string, data: CreateSubTaskInput) =>
-    electrobun.rpc!.request.createSubTask({ taskId, data }),
+  createSubTask: (taskId: string, data: CreateSubTaskInput, parentId?: string) =>
+    electrobun.rpc!.request.createSubTask({ taskId, data, parentId }),
   updateSubTask: (id: string, data: UpdateSubTaskInput) =>
     electrobun.rpc!.request.updateSubTask({ id, data }),
   deleteSubTask: (id: string) => electrobun.rpc!.request.deleteSubTask({ id }),

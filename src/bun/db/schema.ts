@@ -37,6 +37,7 @@ export const subTasks = sqliteTable('sub_tasks', {
   taskId: text('task_id')
     .notNull()
     .references(() => tasks.id, { onDelete: 'cascade' }),
+  parentId: text('parent_id'), // Self-reference for recursive nesting (null = direct child of task)
   title: text('title').notNull(),
   description: text('description'),
   priority: text('priority', { enum: ['none', 'low', 'medium', 'high'] })
