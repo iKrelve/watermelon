@@ -85,6 +85,7 @@ export const DEFAULT_PRESET_ID = 'apple-light'
  * All available theme presets.
  */
 export const themePresets: ThemePreset[] = [
+  // ── Apple ──
   {
     id: 'apple-light',
     nameKey: 'theme.appleLight',
@@ -107,6 +108,7 @@ export const themePresets: ThemePreset[] = [
       accent: '#2C2C2E',
     },
   },
+  // ── Pastel ──
   {
     id: 'pastel',
     nameKey: 'theme.pastel',
@@ -118,6 +120,122 @@ export const themePresets: ThemePreset[] = [
       accent: '#D4ECDD',
     },
   },
+  // ── Rose ──
+  {
+    id: 'rose-light',
+    nameKey: 'theme.roseLight',
+    colorMode: 'light',
+    cssClass: 'theme-rose',
+    preview: {
+      primary: '#DB2777',
+      background: '#FDF2F8',
+      accent: '#FCE7F3',
+    },
+  },
+  {
+    id: 'rose-dark',
+    nameKey: 'theme.roseDark',
+    colorMode: 'dark',
+    cssClass: 'theme-rose',
+    preview: {
+      primary: '#F472B6',
+      background: '#2A1525',
+      accent: '#3D1F35',
+    },
+  },
+  // ── Forest ──
+  {
+    id: 'forest-light',
+    nameKey: 'theme.forestLight',
+    colorMode: 'light',
+    cssClass: 'theme-forest',
+    preview: {
+      primary: '#16A34A',
+      background: '#F0FDF4',
+      accent: '#DCFCE7',
+    },
+  },
+  {
+    id: 'forest-dark',
+    nameKey: 'theme.forestDark',
+    colorMode: 'dark',
+    cssClass: 'theme-forest',
+    preview: {
+      primary: '#4ADE80',
+      background: '#14291E',
+      accent: '#1E3A2C',
+    },
+  },
+  // ── Ocean ──
+  {
+    id: 'ocean-light',
+    nameKey: 'theme.oceanLight',
+    colorMode: 'light',
+    cssClass: 'theme-ocean',
+    preview: {
+      primary: '#0891B2',
+      background: '#F0FDFA',
+      accent: '#CCFBF1',
+    },
+  },
+  {
+    id: 'ocean-dark',
+    nameKey: 'theme.oceanDark',
+    colorMode: 'dark',
+    cssClass: 'theme-ocean',
+    preview: {
+      primary: '#22D3EE',
+      background: '#132A35',
+      accent: '#1A3A47',
+    },
+  },
+  // ── Sunset ──
+  {
+    id: 'sunset-light',
+    nameKey: 'theme.sunsetLight',
+    colorMode: 'light',
+    cssClass: 'theme-sunset',
+    preview: {
+      primary: '#EA580C',
+      background: '#FFFBEB',
+      accent: '#FEF3C7',
+    },
+  },
+  {
+    id: 'sunset-dark',
+    nameKey: 'theme.sunsetDark',
+    colorMode: 'dark',
+    cssClass: 'theme-sunset',
+    preview: {
+      primary: '#FB923C',
+      background: '#2A1A10',
+      accent: '#3D2617',
+    },
+  },
+  // ── Lavender ──
+  {
+    id: 'lavender-light',
+    nameKey: 'theme.lavenderLight',
+    colorMode: 'light',
+    cssClass: 'theme-lavender',
+    preview: {
+      primary: '#7C3AED',
+      background: '#FAF5FF',
+      accent: '#EDE9FE',
+    },
+  },
+  {
+    id: 'lavender-dark',
+    nameKey: 'theme.lavenderDark',
+    colorMode: 'dark',
+    cssClass: 'theme-lavender',
+    preview: {
+      primary: '#A78BFA',
+      background: '#1E1530',
+      accent: '#2E2145',
+    },
+  },
+  // ── Midnight (always dark) ──
   {
     id: 'midnight',
     nameKey: 'theme.midnight',
@@ -127,6 +245,30 @@ export const themePresets: ThemePreset[] = [
       primary: '#818CF8',
       background: '#0F172A',
       accent: '#1E293B',
+    },
+  },
+  // ── Nord (always dark) ──
+  {
+    id: 'nord',
+    nameKey: 'theme.nord',
+    colorMode: 'dark',
+    cssClass: 'theme-nord',
+    preview: {
+      primary: '#88C0D0',
+      background: '#2E3440',
+      accent: '#3B4252',
+    },
+  },
+  // ── Monokai (always dark) ──
+  {
+    id: 'monokai',
+    nameKey: 'theme.monokai',
+    colorMode: 'dark',
+    cssClass: 'theme-monokai',
+    preview: {
+      primary: '#A6E22E',
+      background: '#272822',
+      accent: '#3E3D32',
     },
   },
 ]

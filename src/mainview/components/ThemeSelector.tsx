@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Popover,
@@ -13,13 +14,80 @@ import {
 import { SidebarMenuButton } from '@/components/ui/sidebar'
 import { useUIStore } from '@/stores/ui-store'
 import { themePresets } from '@/theme/presets'
+import type { ThemePreset } from '@/theme/presets'
 import { Palette, Check, Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /**
- * Theme preset selector — replaces the old light/dark/system dropdown.
+ * Renders a single theme swatch button.
+ */
+function ThemeSwatch({
+  preset,
+  isActive,
+  onClick,
+}: {
+  preset: ThemePreset
+  isActive: boolean
+  onClick: () => void
+}): React.JSX.Element {
+  const { t } = useTranslation()
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'relative flex flex-col items-center gap-1 rounded-lg border p-1.5 transition-colors',
+            'hover:border-primary/40 hover:bg-accent/50',
+            isActive
+              ? 'border-primary bg-accent/60 ring-1 ring-primary/20'
+              : 'border-border'
+          )}
+          onClick={onClick}
+          aria-label={t(preset.nameKey)}
+          aria-pressed={isActive}
+        >
+          {/* 3-band color preview swatch */}
+          <div className="flex h-6 w-full overflow-hidden rounded-md">
+            <div
+              className="flex-1"
+              style={{ backgroundColor: preset.preview.background }}
+            />
+            <div
+              className="flex-1"
+              style={{ backgroundColor: preset.preview.primary }}
+            />
+            <div
+              className="flex-1"
+              style={{ backgroundColor: preset.preview.accent }}
+            />
+          </div>
+
+          {/* Preset name */}
+          <span className="max-w-full truncate text-[10px] leading-tight text-foreground/80">
+            {t(preset.nameKey)}
+          </span>
+
+          {/* Active checkmark */}
+          {isActive && (
+            <div className="absolute right-0.5 top-0.5 flex size-3.5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <Check className="size-2" strokeWidth={3} />
+            </div>
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-xs">
+        {t(preset.nameKey)}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+/**
+ * Theme preset selector — shows a popover with grouped light/dark presets.
  *
- * Displays a Popover with 4 preset color swatches + a "System" option.
+ * Displays presets organized into "Light" and "Dark" sections with a 3-column grid.
  * Each swatch shows primary / background / accent as 3 color bands.
  * The currently active preset has a checkmark overlay.
  */
@@ -27,6 +95,15 @@ export function ThemeSelector(): React.JSX.Element {
   const { t } = useTranslation()
   const currentPreset = useUIStore((s) => s.themePreset)
   const setThemePreset = useUIStore((s) => s.setThemePreset)
+
+  const lightPresets = useMemo(
+    () => themePresets.filter((p) => p.colorMode === 'light'),
+    []
+  )
+  const darkPresets = useMemo(
+    () => themePresets.filter((p) => p.colorMode === 'dark'),
+    []
+  )
 
   return (
     <Popover>
@@ -40,73 +117,44 @@ export function ThemeSelector(): React.JSX.Element {
       <PopoverContent
         side="right"
         align="end"
-        className="w-56 p-3"
+        className="w-64 p-3"
       >
-        <p className="mb-2 text-xs font-medium text-muted-foreground">
-          {t('sidebar.theme')}
-        </p>
-
-        {/* Preset grid — 2 columns */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="max-h-[420px] overflow-y-auto pr-1">
           <TooltipProvider delayDuration={400}>
-            {themePresets.map((preset) => {
-              const isActive = currentPreset === preset.id
-              return (
-                <Tooltip key={preset.id}>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      className={cn(
-                        'relative flex flex-col items-center gap-1.5 rounded-lg border p-2 transition-colors',
-                        'hover:border-primary/40 hover:bg-accent/50',
-                        isActive
-                          ? 'border-primary bg-accent/60 ring-1 ring-primary/20'
-                          : 'border-border'
-                      )}
-                      onClick={() => setThemePreset(preset.id)}
-                      aria-label={t(preset.nameKey)}
-                      aria-pressed={isActive}
-                    >
-                      {/* 3-band color preview swatch */}
-                      <div className="flex h-8 w-full overflow-hidden rounded-md">
-                        <div
-                          className="flex-1"
-                          style={{ backgroundColor: preset.preview.background }}
-                        />
-                        <div
-                          className="flex-1"
-                          style={{ backgroundColor: preset.preview.primary }}
-                        />
-                        <div
-                          className="flex-1"
-                          style={{ backgroundColor: preset.preview.accent }}
-                        />
-                      </div>
+            {/* Light themes section */}
+            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              {t('theme.categoryLight')}
+            </p>
+            <div className="mb-3 grid grid-cols-3 gap-1.5">
+              {lightPresets.map((preset) => (
+                <ThemeSwatch
+                  key={preset.id}
+                  preset={preset}
+                  isActive={currentPreset === preset.id}
+                  onClick={() => setThemePreset(preset.id)}
+                />
+              ))}
+            </div>
 
-                      {/* Preset name */}
-                      <span className="text-[11px] leading-tight text-foreground/80">
-                        {t(preset.nameKey)}
-                      </span>
-
-                      {/* Active checkmark */}
-                      {isActive && (
-                        <div className="absolute right-1 top-1 flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                          <Check className="size-2.5" strokeWidth={3} />
-                        </div>
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    {t(preset.nameKey)}
-                  </TooltipContent>
-                </Tooltip>
-              )
-            })}
+            {/* Dark themes section */}
+            <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              {t('theme.categoryDark')}
+            </p>
+            <div className="mb-2 grid grid-cols-3 gap-1.5">
+              {darkPresets.map((preset) => (
+                <ThemeSwatch
+                  key={preset.id}
+                  preset={preset}
+                  isActive={currentPreset === preset.id}
+                  onClick={() => setThemePreset(preset.id)}
+                />
+              ))}
+            </div>
           </TooltipProvider>
         </div>
 
         {/* System option — follows OS preference */}
-        <div className="mt-2 border-t border-border pt-2">
+        <div className="border-t border-border pt-2">
           <button
             type="button"
             className={cn(
