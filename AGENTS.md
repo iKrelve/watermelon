@@ -23,6 +23,8 @@
 - **Charts**: recharts (Statistics view)
 - **Testing**: Vitest + fast-check (前端 property-based testing), cargo test (Rust 后端)
 - **Linting**: ESLint 9 (flat config) + Prettier (前端), Rust 编译器 warnings (后端)
+- **Auto Update**: tauri-plugin-updater + tauri-plugin-process (GitHub Releases)
+- **CI/CD**: GitHub Actions (auto version bump + build + release)
 - **Other**: uuid, sonner (toast), cmdk (command palette), react-day-picker, next-themes, i18next
 
 ## Project Structure
@@ -72,7 +74,7 @@ watermelon/
 │       ├── index.html            # HTML entry
 │       ├── main.tsx              # React entry point (imports rpc.ts, StrictMode, ErrorBoundary)
 │       ├── rpc.ts                # Tauri invoke wrapper: maps invoke('cmd') to window.api interface
-│       ├── App.tsx               # Root component (renders Layout)
+│       ├── App.tsx               # Root component (renders Layout + UpdateDialog)
 │       ├── index.css             # Tailwind CSS entry + shadcn theme variables (oklch)
 │       ├── env.d.ts              # Vite client + window.api type declarations
 │       ├── lib/
@@ -94,6 +96,7 @@ watermelon/
 │       │   ├── CommandPalette.tsx # Cmd+K command palette (cmdk)
 │       │   ├── ThemeProvider.tsx # Theme provider (next-themes, light/dark mode)
 │       │   ├── ErrorBoundary.tsx # React error boundary with retry UI
+│       │   ├── UpdateDialog.tsx  # Auto-update prompt dialog with progress bar
 │       │   ├── RichTextEditor.tsx # TipTap rich text editor
 │       │   ├── task-detail/      # Task detail sub-components
 │       │   ├── task-list/        # Task list sub-components (SortableTaskItem, SubTaskRow, etc.)
@@ -101,11 +104,15 @@ watermelon/
 │       ├── hooks/
 │       │   ├── useKeyboardShortcuts.ts  # Global keyboard shortcuts (Cmd+N, Cmd+F, etc.)
 │       │   ├── useDataQueries.ts        # React Query hooks for all CRUD operations
+│       │   ├── useAutoUpdate.ts         # Auto-update check hook (tauri-plugin-updater)
 │       │   └── use-mobile.ts            # Mobile detection hook (shadcn)
 │       └── utils/
 │           ├── date-filters.ts  # Task date filtering (isOverdue, isUpcoming, filterToday)
 │           ├── priority.ts      # Priority helpers (rank, color, label, badge classes)
 │           └── __tests__/       # Utils tests
+├── .github/
+│   └── workflows/
+│       └── release.yml          # Auto release: version bump → build → publish GitHub Release
 └── artifacts/                    # Final distributable artifacts (DMG, etc.)
 ```
 
@@ -234,3 +241,29 @@ Components are generated into `src/mainview/components/ui/` with `@/` import ali
   - Property testing: fast-check for edge cases
 - **Backend (Rust)**: `cargo test` in `src-tauri/`
   - Rust 服务层可独立单元测试
+
+### Auto Update
+
+- **Plugin**: `tauri-plugin-updater` (Rust) + `@tauri-apps/plugin-updater` (JS)
+- **Signing**: Ed25519 key pair generated via `tauri signer generate`, pubkey configured in `tauri.conf.json`
+- **Endpoint**: `https://github.com/iKrelve/watermelon/releases/latest/download/latest.json`
+- **Frontend**: `useAutoUpdate` hook checks for updates 3 seconds after app startup; `UpdateDialog` component shows version info, release notes, and download progress
+- **Flow**: App starts → check `latest.json` → compare versions → prompt user → download & install → relaunch
+
+### CI/CD & Release
+
+- **Repository**: GitHub public repo `iKrelve/watermelon` (code also mirrored to internal `git.sankuai.com`)
+- **Git remotes**: `origin` = internal Git, `github` = GitHub public repo
+- **Trigger**: Push to `master` branch automatically triggers the release pipeline
+- **Pipeline** (`.github/workflows/release.yml`):
+  1. **Version bump**: Analyzes commit messages (conventional commits) to determine semver bump
+     - `fix:` → patch (+0.0.1)
+     - `feat:` → minor (+0.1.0)
+     - `BREAKING CHANGE` → major (+1.0.0)
+  2. **Update files**: Automatically updates version in `package.json`, `Cargo.toml`, `tauri.conf.json`
+  3. **Tag & commit**: Creates version bump commit and git tag `vX.Y.Z`
+  4. **Build**: Compiles universal macOS binary (aarch64 + x86_64) on GitHub Actions
+  5. **Release**: Publishes GitHub Release with `.dmg`, update `.tar.gz`, signatures, and `latest.json`
+- **Secrets required**: `TAURI_SIGNING_PRIVATE_KEY`, `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+- **Signing key**: Stored at `~/.tauri/watermelon.key` (private) and `~/.tauri/watermelon.key.pub` (public)
+- **Daily workflow**: Just push to master with conventional commit messages → everything else is automatic
