@@ -31,26 +31,26 @@ fn row_to_task(row: &rusqlite::Row) -> rusqlite::Result<Task> {
 pub fn search_tasks(conn: &Connection, query: Option<String>, filters: Option<TaskFilter>) -> Result<Vec<Task>, AppError> {
     let mut conditions: Vec<String> = Vec::new();
     let mut values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    #[allow(unused_assignments)]
-    let mut param_idx: usize = 1;
+
+    // Helper: next 1-based parameter index
+    let next_idx = |values: &Vec<Box<dyn rusqlite::types::ToSql>>| values.len() + 1;
 
     // Text search
     if let Some(ref q) = query {
         let trimmed = q.trim();
         if !trimmed.is_empty() {
             let search_term = format!("%{}%", trimmed);
-            conditions.push(format!("(title LIKE ?{} OR description LIKE ?{})", param_idx, param_idx + 1));
+            let i = next_idx(&values);
+            conditions.push(format!("(title LIKE ?{} OR description LIKE ?{})", i, i + 1));
             values.push(Box::new(search_term.clone()));
             values.push(Box::new(search_term));
-            param_idx += 2;
         }
     }
 
     if let Some(ref f) = filters {
         if let Some(ref status) = f.status {
-            conditions.push(format!("status = ?{}", param_idx));
+            conditions.push(format!("status = ?{}", next_idx(&values)));
             values.push(Box::new(status.clone()));
-            param_idx += 1;
         }
 
         if let Some(ref cat_opt) = f.category_id {
@@ -59,29 +59,25 @@ pub fn search_tasks(conn: &Connection, query: Option<String>, filters: Option<Ta
                     conditions.push("category_id IS NULL".to_string());
                 }
                 Some(cat_id) => {
-                    conditions.push(format!("category_id = ?{}", param_idx));
+                    conditions.push(format!("category_id = ?{}", next_idx(&values)));
                     values.push(Box::new(cat_id.clone()));
-                    param_idx += 1;
                 }
             }
         }
 
         if let Some(ref priority) = f.priority {
-            conditions.push(format!("priority = ?{}", param_idx));
+            conditions.push(format!("priority = ?{}", next_idx(&values)));
             values.push(Box::new(priority.clone()));
-            param_idx += 1;
         }
 
         if let Some(ref from) = f.due_date_from {
-            conditions.push(format!("due_date >= ?{}", param_idx));
+            conditions.push(format!("due_date >= ?{}", next_idx(&values)));
             values.push(Box::new(from.clone()));
-            param_idx += 1;
         }
 
         if let Some(ref to) = f.due_date_to {
-            conditions.push(format!("due_date <= ?{}", param_idx));
+            conditions.push(format!("due_date <= ?{}", next_idx(&values)));
             values.push(Box::new(to.clone()));
-            param_idx += 1;
         }
     }
 
