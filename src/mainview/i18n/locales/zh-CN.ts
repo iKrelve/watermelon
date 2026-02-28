@@ -273,6 +273,19 @@ const zhCN = {
     operationFailed: '操作失败',
   },
 
+  // Updater
+  updater: {
+    title: '发现新版本',
+    description: '小西瓜 v{{version}} 已发布，是否立即更新？',
+    releaseNotes: '更新内容：',
+    downloading: '正在下载...',
+    installing: '正在安装...',
+    install: '立即更新',
+    updating: '更新中...',
+    later: '稍后',
+    error: '更新失败：{{message}}',
+  },
+
   // Toast
   toast: {
     importSuccess: '数据导入成功',
