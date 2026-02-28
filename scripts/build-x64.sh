@@ -62,6 +62,6 @@ cleanup() {
 trap cleanup EXIT
 
 # 通过 Rosetta 2 运行 x64 CLI（CLI 内嵌了 x64 bun 运行时）
-arch -x86_64 "$CLI_BIN" build --env=canary
+arch -x86_64 "$CLI_BIN" build --env=stable
 
 echo "✅ x64 构建完成！"

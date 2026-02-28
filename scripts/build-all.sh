@@ -2,10 +2,10 @@
 # build-all.sh — 在 Apple Silicon Mac 上同时构建 arm64 和 x64 版本
 #
 # 使用方式:
-#   bun run build:all
+#   bun run build
 #
 # 产物在 artifacts/ 目录下，包含两个架构的文件
-# 构建目录在 build/ 下，分别为 canary-macos-arm64/ 和 canary-macos-x64/
+# 构建目录在 build/ 下，分别为 stable-macos-arm64/ 和 stable-macos-x64/
 
 set -euo pipefail
 
@@ -53,7 +53,7 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📦 步骤 2/3: Electrobun 构建 (arm64)..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-bun electrobun build --env=canary
+bun electrobun build --env=stable
 
 # 保存 arm64 的 artifacts
 echo "   保存 arm64 产物..."
@@ -81,7 +81,7 @@ trap cleanup EXIT
 cp "$X64_CLI" "$CLI_BIN"
 
 # 通过 Rosetta 2 运行 x64 CLI
-arch -x86_64 "$CLI_BIN" build --env=canary
+arch -x86_64 "$CLI_BIN" build --env=stable
 
 # 保存 x64 的 artifacts
 echo "   保存 x64 产物..."
@@ -102,8 +102,8 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "✅ 双架构构建完成！"
 echo ""
 echo "📁 构建目录:"
-echo "   arm64: build/canary-macos-arm64/"
-echo "   x64:   build/canary-macos-x64/"
+echo "   arm64: build/stable-macos-arm64/"
+echo "   x64:   build/stable-macos-x64/"
 echo ""
 echo "📁 产物目录: artifacts/"
 ls -1 "$PROJECT_DIR/artifacts/" 2>/dev/null | sed 's/^/   /'
