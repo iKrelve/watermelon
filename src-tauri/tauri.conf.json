@@ -1,6 +1,6 @@
 {
   "productName": "小西瓜",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "identifier": "com.xiao-xigua.watermelon",
   "build": {
     "frontendDist": "../dist",
