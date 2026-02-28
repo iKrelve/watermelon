@@ -472,7 +472,7 @@ export function TaskDetail(): React.JSX.Element {
         <Separator className="opacity-60" />
 
         {/* ===== Section 3: Sub-tasks (collapsible, reduces initial noise) ===== */}
-        <Collapsible defaultOpen={hasSubTasks}>
+        <Collapsible defaultOpen>
           <CollapsibleTrigger className="flex w-full items-center gap-2 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors group">
             <ChevronRight className="size-3.5 transition-transform duration-200 group-data-[state=open]:rotate-90" />
             <ListChecks className="size-3.5" />
