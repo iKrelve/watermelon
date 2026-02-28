@@ -137,6 +137,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
+          tauriScript: bunx tauri
           tagName: v${{ needs.version.outputs.new_version }}
           releaseName: '小西瓜 v${{ needs.version.outputs.new_version }}'
           releaseBody: |
@@ -145,4 +146,6 @@ jobs:
             自动构建发布。下载 `.dmg` 文件安装，已安装用户会自动收到更新提示。
           releaseDraft: false
           prerelease: false
+          includeUpdaterJson: true
+          updaterJsonPreferNsis: false
           args: --target universal-apple-darwin
